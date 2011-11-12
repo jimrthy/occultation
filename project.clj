@@ -1,5 +1,5 @@
-(defproject penumbra "0.6.0"
-  :description "An idiomatic wrapper for OpenGL. Clojure 1.3 vec"
+(defproject kephale/penumbra "0.6.0-SNAPSHOT"
+  :description "An idiomatic wrapper for OpenGL. Clojure 1.3 version"
   :dependencies [[slick-util "1.0.0"]
                  [kephale/cantor "0.4.0-SNAPSHOT"]
                  [org.clojure/clojure "1.3.0"] 

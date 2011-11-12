@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.core
-  (:use [clojure.contrib.def :only (defn-memo defmacro- defvar defvar-)])
+  (:use [penumbra.utils :only (defn-memo defmacro-)])
   (:import (org.lwjgl.opengl GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32
                              ARBDrawBuffers
                              ARBFramebufferObject
@@ -30,67 +30,77 @@
 (Natives/extractNativeLibs (PenumbraSystem/getPlatform) "LWGL")
 
 
-(defvar *primitive-type* nil
-  "What type of primitive is being rendered?")
+(def ^:dynamic *primitive-type* "What type of primitive is being rendered?" nil)
+     
 
-(defvar *check-errors* true
-  "Causes errors in glGetError to throw an exception.  This creates minimal CPU overhead (~3%), and is almost always worth having enabled.")
+(def ^:dynamic *check-errors* 
+  "Causes errors in glGetError to throw an exception.  This creates minimal CPU overhead (~3%), and is almost always worth having enabled."
+  true)
 
-(defvar *view* (atom [0 0 0 0])
-  "Pixel boundaries of render window.  Parameters represent [x y width height].")
-
-;;;
-
-(defvar *program* nil
-  "The current program bound by with-program")
-
-(defvar *uniforms* nil
-  "Cached integer locations for uniforms (bound on a per-program basis)")
-
-(defvar *attributes* nil
-  "Cached integer locations for attributes (bound on a per-program basis)")
+(def ^:dynamic *view* 
+  "Pixel boundaries of render window.  Parameters represent [x y width height]."
+  (atom [0 0 0 0]))
 
 ;;;
 
-(defvar *texture-pool* nil
-  "A list of all allocated textures.  Unused textures can be overwritten, thus avoiding allocation.")
+(def ^:dynamic *program* 
+  "The current program bound by with-program"
+  nil)
+
+(def ^:dynamic *uniforms* 
+  "Cached integer locations for uniforms (bound on a per-program basis)"
+  nil)
+
+(def ^:dynamic *attributes* 
+  "Cached integer locations for attributes (bound on a per-program basis)"
+  nil)
 
 ;;;
 
-(defvar *renderer* nil)
-
-(defvar *display-list* nil
-  "Display list for framebuffer/blit rendering.")
-
-(defvar *frame-buffer* nil
-  "The currently bound frame buffer")
-
-(defvar *read-format* nil
-  "A function which returns the proper read format for a sequence type and tuple.")
-
-(defvar *render-to-screen?* false
-  "Whether the current renderer only targets the screen.")
-
-(defvar *render-target* nil
-  "The texture which is the main render target (GL_COLOR_ATTACHMENT0)")
-
-(defvar *layered-target?* false
-  "Is the render target a layered texture?")
-
-(defvar *z-offset* nil
-  "2-D slice of 3-D texture to render into.")
+(def ^:dynamic *texture-pool* 
+  "A list of all allocated textures.  Unused textures can be overwritten, thus avoiding allocation."
+  nil)
 
 ;;;
 
-(defvar *font-cache* nil
-  "Where all the fonts are kept")
+(def ^:dynamic *renderer* nil)
 
-(defvar *font* nil
-  "Current font")
+(def ^:dynamic *display-list* "Display list for framebuffer/blit rendering." nil)
+
+(def ^:dynamic *frame-buffer* 
+  "The currently bound frame buffer"
+  nil)
+
+(def ^:dynamic *read-format* 
+  "A function which returns the proper read format for a sequence type and tuple."
+  nil)
+
+(def ^:dynamic *render-to-screen?* 
+  "Whether the current renderer only targets the screen."
+  false)
+
+(def ^:dynamic *render-target* 
+  "The texture which is the main render target (GL_COLOR_ATTACHMENT0)"
+  nil)
+
+(def ^:dynamic *layered-target?* 
+  "Is the render target a layered texture?"
+  false)
+
+(def ^:dynamic *z-offset* 
+  "2-D slice of 3-D texture to render into."
+  nil)
 
 ;;;
 
-(defvar- containers [
+(def ^:dynamic *font-cache* "Where all the fonts are kept" nil)
+     
+
+(def ^:dynamic *font* "Current font" nil)
+
+;;;
+
+(def ^:dynamic containers [
                      APPLEFloatPixels
                      ARBDrawBuffers
                      ARBTextureFloat

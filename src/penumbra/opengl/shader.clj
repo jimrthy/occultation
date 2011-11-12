@@ -7,8 +7,8 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.shader
-  (:use [clojure.contrib.def :only (defmacro- defvar)])
-  (:use [clojure.contrib.seq :only (indexed)])
+  (:use [penumbra.utils :only (defmacro- defvar)])
+  (:use [penumbra.utils :only (indexed)])
   (:use [penumbra.opengl.core])
   (:use [penumbra.glsl.core])
   (:use [penumbra.translate.core])
@@ -95,8 +95,9 @@
 
 ;;;shader
 
-(defvar *verbose* true
-  "Full feedback on shader compilation.")
+(def ^:dynamic *verbose* 
+  "Full feedback on shader compilation."
+  true)
 
 (defmacro- gl-query-info
   [query-fn setting fn-name]

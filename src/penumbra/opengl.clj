@@ -9,7 +9,7 @@
 (ns ^{:author "Zachary Tellman"}
   penumbra.opengl
   (:use [penumbra.opengl core]
-        [clojure.contrib.def :only (defn-memo defmacro- defvar)])
+        [penumbra.utils :only (defn-memo defmacro- defvar)])
   (:require [penumbra.opengl.texture :as tex]
             [penumbra.data :as data]
             [penumbra.opengl.frame-buffer :as fb]
@@ -17,7 +17,8 @@
             [penumbra.opengl.effects :as fx]
             [penumbra.glsl.core :as glsl]
             [penumbra.opengl.geometry :as geometry]
-            [penumbra.opengl.teapot :as t])
+            [penumbra.opengl.teapot :as t]
+	    [clojure.string :as string])
   (:import (org.lwjgl BufferUtils)
            (java.io File ByteArrayOutputStream ByteArrayInputStream)
            (javax.imageio ImageIO)
@@ -26,12 +27,15 @@
 ;;;
 
 (defmacro- import-fn [sym]
-  (let [m (meta (eval sym))
-        m (meta (intern (:ns m) (:name m)))
-        n (:name m)
-        arglists (:arglists m)
-        doc (:doc m)]
-    (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym))))
+  (if (meta (eval sym))
+    (let [m (meta (eval sym))
+	  m (meta (intern (:ns m) (:name m)))
+	  n (:name m)
+	  arglists (:arglists m)
+	  doc (:doc m)]
+      (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym)))
+    (let [sym-name (symbol (last (string/split (str sym) #"/")))]
+      (list `def sym-name (eval sym)))))
 
 ;;;
 

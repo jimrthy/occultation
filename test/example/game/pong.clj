@@ -8,7 +8,7 @@
 
 (ns example.game.pong
   (:use [penumbra opengl]
-        [clojure.contrib.def])
+        [penumbra.utils])
   (:require [penumbra [app :as app] [text :as text]]))
 
 (def ball-width 0.03)

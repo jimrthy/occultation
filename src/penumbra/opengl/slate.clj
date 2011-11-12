@@ -7,10 +7,10 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.slate
-  (:use [clojure.contrib.def :only [defmacro- defn-memo defvar-]]
-        [clojure.contrib.pprint]
-        [clojure.contrib.seq :only [separate]]
-        [clojure.contrib.core :only [-?>]]
+  (:use [penumbra.utils :only [defmacro- defn-memo defvar-]]
+        [clojure.pprint]
+        [penumbra.utils :only [separate]]
+        [penumbra.utils :only [-?>]]
         [penumbra.opengl core]
         [penumbra.app core])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat]))
@@ -21,7 +21,7 @@
   :drawable
   :pixel-buffer)
 
-(defvar- *slate* nil)
+(def ^:dynamic *slate* nil)
 
 (defn supported?
   "Checks whether pixel buffers are supported."

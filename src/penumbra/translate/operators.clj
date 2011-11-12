@@ -10,18 +10,17 @@
   (:use [clojure.walk]
         [penumbra.translate core]
 		[cantor :only (rectangle-factors)]
-        [clojure.contrib.seq :only (indexed separate)]
-        [clojure.contrib.def :only (defn-memo defvar-)]
+        [penumbra.utils :only (defn-memo defvar- indexed separate)]
         [penumbra.translate.core])
   (:require [clojure.zip :as zip]
             [penumbra.data :as data]))
 
 ;;
 
-(def *dim-element* nil)
-(def *typeof-dim* nil)
-(def *typeof-element* nil)
-(def *typeof-param* nil)
+(def ^:dynamic *dim-element* nil)
+(def ^:dynamic *typeof-dim* nil)
+(def ^:dynamic *typeof-element* nil)
+(def ^:dynamic *typeof-param* nil)
 
 ;;utilities
 

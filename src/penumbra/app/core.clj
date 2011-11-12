@@ -7,13 +7,15 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app.core
-  (:use [clojure.contrib.def :only [defvar]]))
+  (:use [penumbra.utils :only [defvar]]))
 
-(defvar *app* nil
-  "Current application.")
+(def ^:dynamic *app* 
+  "Current application."
+  nil)
 
-(defvar *hz* nil
-  "Refresh rate of update-loop")
+(def ^:dynamic *hz* 
+  "Refresh rate of update-loop"
+  nil)
 
 ;;;
 

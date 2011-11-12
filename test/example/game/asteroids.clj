@@ -8,7 +8,7 @@
 
 (ns example.game.asteroids
   (:use [penumbra opengl]
-        [clojure.contrib.seq :only (separate)]
+        [penumbra.utils :only (separate)]
         [cantor])
   (:require [penumbra.app :as app]
             [penumbra.text :as text]

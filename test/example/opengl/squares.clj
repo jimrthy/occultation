@@ -7,7 +7,7 @@
 
 (ns example.opengl.squares
   (:use [penumbra opengl compute]
-        [clojure.contrib.seq :only (flatten)])
+        [penumbra.utils :only (flatten)])
   (:require [penumbra.app :as app]
             [penumbra.data :as data]))
 

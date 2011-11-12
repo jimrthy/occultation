@@ -8,7 +8,7 @@
 
 (ns penumbra.app.window
   (:use [penumbra.opengl]
-        [clojure.contrib.core :only (-?>)])
+        [penumbra.utils :only (-?>)])
   (:require [penumbra.opengl
               [texture :as texture]
               [context :as context]]

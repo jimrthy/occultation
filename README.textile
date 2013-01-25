@@ -5,3 +5,7 @@ From the original readme:
 "Penumbra is an idiomatic wrapper for OpenGL in Clojure, by way of LWJGL."
 
 This version of Penumbra is a fork that is under somewhat more active development. However, the purpose of this version of Penumbra is primarily to support brevis (https://github.com/kephale/brevis).
+
+The only examples that are functional are:
+
+- test/example/opengl/gears.clj

@@ -98,6 +98,7 @@
 (gl-import- glClear gl-clear)
 (gl-import+ glClearColor clear-color)
 (gl-import+ glDepthFunc depth-test)
+(gl-import+ glDepthRange depth-range)
 
 (defn clear
   "Clears the depth and color buffers."

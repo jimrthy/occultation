@@ -1,4 +1,4 @@
-(defproject kephale/penumbra "0.6.1"
+(defproject kephale/penumbra "0.6.3-SNAPSHOT"
   :description "An idiomatic wrapper for OpenGL. Clojure 1.3 version"
   :dependencies [[slick-util "1.0.0"]
                  [kephale/cantor "0.4.0-SNAPSHOT"]
@@ -7,6 +7,6 @@
 		 [org.clojars.charles-stain/lwjgl "3.0"]
 		 [org.lwjgl/lwjgl-util "2.7.1"]
 		 [org.clojars.charles-stain/jme3-lwjgl-natives "3.0"]]
-  :java-source-path "java"
-  :dev-dependencies [[swank-clojure "1.3.0"]]
+;  :source-paths ["src"]
+  :java-source-path ["java"]
   :checksum-deps false)

@@ -6,7 +6,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns examples
+(ns penumbra.example.examples
   (:use [clojure.test])
   (:require
     ;;[example.app.async :as async]
@@ -27,7 +27,7 @@
     [example.gpgpu.brians-brain :as brian]
     [example.gpgpu.fluid :as fluid]))
 
-(deftest run
+#_(deftest run
   '(testing "Async"
     (async/start))
   '(testing "Switch"

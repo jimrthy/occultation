@@ -1,7 +1,7 @@
 (defproject kephale/penumbra "0.6.3-SNAPSHOT"
   :description "An idiomatic wrapper for OpenGL."
   :dependencies [[slick-util "1.0.0"]
-                 [kephale/cantor "0.4.0-SNAPSHOT"]
+                 [kephale/cantor "0.4.1"]
                  [org.clojure/clojure "1.4.0"] 
                  [org.clojure/math.combinatorics "0.0.2"]
                  [org.clojars.charles-stain/lwjgl "3.0"]

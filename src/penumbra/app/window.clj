@@ -78,7 +78,7 @@
                       (when (resized? this)
                         (let [[w h] (size this)]
                           (ref-set window-size [w h])
-                          (viewport (Display/getX) (Display/getY) w h)
+                          (viewport 0 0 w h)
                           ;(viewport 0 0 w h)
                           (event/publish! app :reshape [(Display/getX) (Display/getY) w h])))))
      (init! [this]

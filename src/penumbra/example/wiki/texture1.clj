@@ -5,7 +5,7 @@
 (defn init [state]
   (enable :texture-2d)
   (assoc state
-    :texture (load-texture-from-file "/Users/zach/Desktop/dog.jpg")))
+    :texture (load-texture-from-file "/Users/hb/Downloads/sig.png")))
 
 (defn display [_ state]
   (println (:texture state))

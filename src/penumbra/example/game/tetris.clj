@@ -9,7 +9,7 @@
 (ns penumbra.example.game.tetris
   (:use [penumbra opengl])
   (:require [penumbra.app :as app])
-  (:use [penumbra.utils :only (indexed defn-mem)])
+  (:use [penumbra.utils :only (indexed)])
   (:use [clojure.pprint]))
 
 ;;;

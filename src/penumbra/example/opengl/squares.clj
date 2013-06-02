@@ -6,8 +6,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.example.opengl.squares
-  (:use [penumbra opengl compute]
-        [penumbra.utils :only (flatten)])
+  (:use [penumbra opengl compute])
   (:require [penumbra.app :as app]
             [penumbra.data :as data]))
 

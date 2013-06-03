@@ -12,10 +12,16 @@
   (:use [penumbra.opengl.core :only (*render-to-screen?*)]
         [cantor :only (rectangle-factors)]))
 
-(defmacro defmap [name & body]
+(defmacro defmap
+  "Define a named map template, which will lazily create a set of
+  shader programs based on the types passed in."
+  [name & body]
   `(def ~name (glsl/create-map-template (quote ~body))))
 
-(defmacro defreduce [name & body]
+(defmacro defreduce
+  "Define a named template for a reduce, which will lazily create a set of
+  shader programs based on the types passed in."
+  [name & body]
   `(def ~name (glsl/create-reduce-template (quote ~body))))
 
 (defmacro defpipeline [name & params]

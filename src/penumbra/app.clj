@@ -313,5 +313,7 @@
    :key-type       [key state]
    :key-press      [key state]
    :key-release    [key state]"
+  ([callbacks]
+     (start callbacks {}))
   ([callbacks state]
      (start-single-thread (create callbacks state) loop/basic-loop)))

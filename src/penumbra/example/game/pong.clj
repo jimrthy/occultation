@@ -34,7 +34,7 @@
         (f velocity)
         velocity))))
 
-(defvar boundaries
+(def boundaries
   [(reflector [0 -1 1 1] (fn [[x y]] [x (abs y)]))
    (reflector [0 1 1 1] (fn [[x y]] [x (- (abs y))]))
    (reflector [-1 0 1 1] (fn [[x y]] [(abs x) y]))

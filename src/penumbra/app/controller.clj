@@ -29,29 +29,29 @@
         invalidated? (ref true)
         latch (ref (CountDownLatch. 1))]
     (reify
-     Controller
-     (paused? [_] @paused?)
-     (stopped? [_] @stopped?)
-     (invalidated? [_] @invalidated?)
-     (invalidated! [_ flag]
-                   (dosync (ref-set invalidated? flag))
-                   nil)
-     (stop! [this] (stop! this true))
-     (stop! [_ reason]
-            (dosync
-             (ref-set stopped? reason)))
-     (pause! [_]
-             (dosync
-              (ref-set paused? true)
-              (when-not @latch
-                (ref-set latch (CountDownLatch. 1)))))
-     (resume! [_]
-              (dosync
-               (ref-set paused? false)
-               (ref-set stopped? false)
-               (when @latch
-                 (.countDown @latch)
-                 (ref-set latch nil))))
-     (wait! [_]
-            (when-let [l @latch]
-              (.await l))))))
+      Controller
+      (paused? [_] @paused?)
+      (stopped? [_] @stopped?)
+      (invalidated? [_] @invalidated?)
+      (invalidated! [_ flag]
+        (dosync (ref-set invalidated? flag))
+        nil)
+      (stop! [this] (stop! this true))
+      (stop! [_ reason]
+        (dosync
+         (ref-set stopped? reason)))
+      (pause! [_]
+        (dosync
+         (ref-set paused? true)
+         (when-not @latch
+           (ref-set latch (CountDownLatch. 1)))))
+      (resume! [_]
+        (dosync
+         (ref-set paused? false)
+         (ref-set stopped? false)
+         (when @latch
+           (.countDown @latch)
+           (ref-set latch nil))))
+      (wait! [_]
+        (when-let [l @latch]
+          (.await l))))))

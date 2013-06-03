@@ -6,14 +6,13 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns penumbra.app.core
-  (:use [penumbra.utils :only [defvar]]))
+(ns penumbra.app.core)
 
-(def ^:dynamic *app* 
+(def ^:dynamic *app*
   "Current application."
   nil)
 
-(def ^:dynamic *hz* 
+(def ^:dynamic *hz*
   "Refresh rate of update-loop"
   nil)
 

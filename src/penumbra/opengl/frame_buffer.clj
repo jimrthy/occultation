@@ -52,9 +52,9 @@
   `(let [rb# (gen-render-buffer)]
      (attach-depth-buffer rb# ~dim)
      (try
-      ~@body
-      (finally
-       (delete-render-buffer rb#)))))
+       ~@body
+       (finally
+         (delete-render-buffer rb#)))))
 
 ;;Frame Buffers
 
@@ -166,16 +166,16 @@
       (binding [*frame-buffer* fb]
         (bind-frame-buffer fb)
         (try
-         (f)
-         (finally
-          (bind-frame-buffer 0)
-          (destroy-frame-buffer fb)))))))
+          (f)
+          (finally
+            (bind-frame-buffer 0)
+            (destroy-frame-buffer fb)))))))
 
 (defn with-saved-frame-buffer
   [fb f]
   (binding [*frame-buffer* fb]
     (bind-frame-buffer fb)
     (try
-     (f)
-     (finally
-      (bind-frame-buffer 0)))))
+      (f)
+      (finally
+        (bind-frame-buffer 0)))))

@@ -9,56 +9,65 @@
 (ns penumbra.example.examples
   (:use [clojure.test])
   (:require
-    ;;[example.app.async :as async]
-    ;;[example.app.switch :as switch]
-    ;;[example.app.nested :as nested]
-    [penumbra.example.opengl.text :as text]
-    [penumbra.example.opengl.gears :as gears]
-    [penumbra.example.opengl.sierpinski :as sierpinski]
-    [penumbra.example.opengl.render-to-texture :as rtt]
-    [penumbra.example.opengl.marble :as marble]
-    [penumbra.example.opengl.accumulate :as accumulate]
-    [penumbra.example.opengl.async :as gl-async]
-    [penumbra.example.game.tetris :as tetris]
-    [penumbra.example.game.asteroids :as asteroids]
-    [penumbra.example.game.pong :as pong]
-    [penumbra.example.gpgpu.mandelbrot :as mandelbrot]
-    [penumbra.example.gpgpu.convolution :as convolution]
-    [penumbra.example.gpgpu.brians-brain :as brian]
-    [penumbra.example.gpgpu.fluid :as fluid]))
+   [penumbra.example.app.async :as async]
+   [penumbra.example.app.switch :as switch]
+   [penumbra.example.app.nested :as nested]
+   [penumbra.example.opengl.text :as text]
+   [penumbra.example.opengl.gears :as gears]
+   [penumbra.example.opengl.sierpinski :as sierpinski]
+   [penumbra.example.opengl.render-to-texture :as rtt]
+   [penumbra.example.opengl.marble :as marble]
+   [penumbra.example.opengl.shadow :as shadow]
+   [penumbra.example.opengl.squares :as squares]
+   [penumbra.example.opengl.accumulate :as accumulate]
+   [penumbra.example.opengl.async :as gl-async]
+   [penumbra.example.game.tetris :as tetris]
+   [penumbra.example.game.asteroids :as asteroids]
+   [penumbra.example.game.pong :as pong]
+   [penumbra.example.gpgpu.mandelbrot :as mandelbrot]
+   [penumbra.example.gpgpu.convolution :as convolution]
+   [penumbra.example.gpgpu.brians-brain :as brian]
+   [penumbra.example.gpgpu.fluid :as fluid]
+   [penumbra.example.gpgpu.n-body :as nbody]))
 
 #_(deftest run
-  '(testing "Async"
-    (async/start))
-  '(testing "Switch"
-    (switch/start))
-  '(testing "Nested"
-     (nested/start))
-  '(testing "Text"
-    (text/start))
-  (testing "Gears"
-    (gears/start))
-  (testing "Sierpinski"
-    (sierpinski/start))
-  (testing "Render-to-Texture"
-    (rtt/start))
-  (testing "Marble"
-    (marble/start))
-  (testing "Accumulate"
-    (accumulate/start))
-  (testing "Async"
-    (gl-async/start))
-  (testing "Tetris"
-    (tetris/start))
-  (testing "Asteroids"
-    (asteroids/start))
-  (testing "Pong"
-    (pong/start))
-  (testing "Mandelbrot"
-    (mandelbrot/start))
-  (testing "Convolution"
-    (convolution/start))
-  (testing "Brian's Brains"
-    (brian/start))
-  (testing "Fluid"
-    (fluid/start)))
+    (testing "Async"
+      (async/start))
+    (testing "Switch"
+      (switch/start))
+    (testing "Nested"
+      (nested/start))
+    (testing "Text"
+      (text/start))
+    (testing "Gears"
+      (gears/start))
+    (testing "Sierpinski"
+      (sierpinski/start))
+    (testing "Render-to-Texture"
+      (rtt/start))
+    (testing "Marble"
+      (marble/start))
+    (testing "Shadow"
+      (shadow/start))
+    (testing "Squares"
+      (squares/start))
+    (testing "Accumulate"
+      (accumulate/start))
+    (testing "Async"
+      (gl-async/start))
+    (testing "Tetris"
+      (tetris/start))
+    (testing "Asteroids"
+      (asteroids/start))
+    (testing "Pong"
+      (pong/start))
+    (testing "Mandelbrot"
+      (mandelbrot/start))
+    (testing "Convolution"
+      (convolution/start))
+    (testing "Brian's Brains"
+      (brian/start))
+    (testing "Fluid"
+      (fluid/start))
+    (testing "N Body"
+      (nbody/start)))

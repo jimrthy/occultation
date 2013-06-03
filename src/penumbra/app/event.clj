@@ -17,31 +17,31 @@
 (defn create []
   (let [event (ref {})]
     (reify
-     EventHandler
-     (subscribe!
-      [_ hook f]
-      (dosync
-       (alter event (fn [e] (update-in e [hook] #(set (conj % f))))))
-      nil)
-     (unsubscribe!
-      [_ hook f]
-      (dosync
-       (alter event (fn [e] (update-in e [hook] #(disj % f)))))
-      nil)
-     (publish-
-      [_ hook args]
-      (doseq [f (->> @event hook)]
-        (apply f args))
-      nil)
-     (subscribe-once!
-      [this hook f]
+      EventHandler
       (subscribe!
-       this hook
-       (letfn [(f* [& args]
+        [_ hook f]
+        (dosync
+         (alter event (fn [e] (update-in e [hook] #(set (conj % f))))))
+        nil)
+      (unsubscribe!
+        [_ hook f]
+        (dosync
+         (alter event (fn [e] (update-in e [hook] #(disj % f)))))
+        nil)
+      (publish-
+        [_ hook args]
+        (doseq [f (->> @event hook)]
+          (apply f args))
+        nil)
+      (subscribe-once!
+        [this hook f]
+        (subscribe!
+         this hook
+         (letfn [(f* [& args]
                    (apply f args)
                    (unsubscribe! this hook f*))]
-         f*))
-      nil))))
+           f*))
+        nil))))
 
 (defn publish! [e hook & args]
   (publish- e hook args))

@@ -13,30 +13,31 @@
 
 ;;;
 
-(defvar *check-errors* true
-  "Check errors after every OpenAL call.")
+(def *check-errors*
+  "Check errors after every OpenAL call."
+  true)
 
 ;;;
 
-(defvar- containers [AL10 AL11])
+(def ^:private containers [AL10 AL11])
 
-(defn- get-fields [#^Class static-class]
+(defn- get-fields [^Class static-class]
   (. static-class getFields))
 
-(defn- get-methods [#^Class static-class]
+(defn- get-methods [^Class static-class]
   (. static-class getMethods))
 
-(defn- contains-field? [#^Class static-class field]
+(defn- contains-field? [^Class static-class field]
   (first
    (filter
     #{ (name field) }
-    (map #(.getName #^Field %) (get-fields static-class)))))
+    (map #(.getName ^Field %) (get-fields static-class)))))
 
 (defn- contains-method? [static-class method]
   (first
    (filter
     #{ (name method) }
-    (map #(.getName #^Method %) (get-methods static-class)))))
+    (map #(.getName ^Method %) (get-methods static-class)))))
 
 (defn- field-container [field]
   (first (filter #(contains-field? % field) containers)))
@@ -46,7 +47,7 @@
 
 (defn- get-al-method [method]
   (let [method-name (name method)]
-    (first (filter #(= method-name (.getName #^Method %)) (mapcat get-methods containers)))))
+    (first (filter #(= method-name (.getName ^Method %)) (mapcat get-methods containers)))))
 
 (defn-memo enum-name
   "Takes the numeric value of a gl constant (i.e. AL_LOOPING), and gives the name"
@@ -54,9 +55,9 @@
   (if (= 0 enum-value)
     "NONE"
     (.getName
-     #^Field (some
-              #(if (= enum-value (.get #^Field % nil)) % nil)
-              (mapcat get-fields containers)))))
+     ^Field (some
+             #(if (= enum-value (.get ^Field % nil)) % nil)
+             (mapcat get-fields containers)))))
 
 (defn-memo enum [k]
   (when (keyword? k)
@@ -77,8 +78,8 @@
 
 (defn- get-parameters [method]
   (map
-   #(keyword (.getCanonicalName #^Class %))
-   (.getParameterTypes #^Method (get-al-method method))))
+   #(keyword (.getCanonicalName ^Class %))
+   (.getParameterTypes ^Method (get-al-method method))))
 
 (defn- get-doc-string [method]
   (str "Wrapper for " method "."))
@@ -101,7 +102,7 @@
          [& args#]
          `(do
             (let [~'value# (. ~'~container ~'~import-from ~@(map (fn [x#] (or (enum x#) x#)) args#))]
-              (when *check-errors* 
+              (when *check-errors*
                 (check-error ~'~method-name))
               ~'value#))))))
 

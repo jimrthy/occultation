@@ -31,33 +31,33 @@
 
 
 (def ^:dynamic *primitive-type* "What type of primitive is being rendered?" nil)
-     
 
-(def ^:dynamic *check-errors* 
+
+(def ^:dynamic *check-errors*
   "Causes errors in glGetError to throw an exception.  This creates minimal CPU overhead (~3%), and is almost always worth having enabled."
   true)
 
-(def ^:dynamic *view* 
+(def ^:dynamic *view*
   "Pixel boundaries of render window.  Parameters represent [x y width height]."
   (atom [0 0 0 0]))
 
 ;;;
 
-(def ^:dynamic *program* 
+(def ^:dynamic *program*
   "The current program bound by with-program"
   nil)
 
-(def ^:dynamic *uniforms* 
+(def ^:dynamic *uniforms*
   "Cached integer locations for uniforms (bound on a per-program basis)"
   nil)
 
-(def ^:dynamic *attributes* 
+(def ^:dynamic *attributes*
   "Cached integer locations for attributes (bound on a per-program basis)"
   nil)
 
 ;;;
 
-(def ^:dynamic *texture-pool* 
+(def ^:dynamic *texture-pool*
   "A list of all allocated textures.  Unused textures can be overwritten, thus avoiding allocation."
   nil)
 
@@ -67,71 +67,71 @@
 
 (def ^:dynamic *display-list* "Display list for framebuffer/blit rendering." nil)
 
-(def ^:dynamic *frame-buffer* 
+(def ^:dynamic *frame-buffer*
   "The currently bound frame buffer"
   nil)
 
-(def ^:dynamic *read-format* 
+(def ^:dynamic *read-format*
   "A function which returns the proper read format for a sequence type and tuple."
   nil)
 
-(def ^:dynamic *render-to-screen?* 
+(def ^:dynamic *render-to-screen?*
   "Whether the current renderer only targets the screen."
   false)
 
-(def ^:dynamic *render-target* 
+(def ^:dynamic *render-target*
   "The texture which is the main render target (GL_COLOR_ATTACHMENT0)"
   nil)
 
-(def ^:dynamic *layered-target?* 
+(def ^:dynamic *layered-target?*
   "Is the render target a layered texture?"
   false)
 
-(def ^:dynamic *z-offset* 
+(def ^:dynamic *z-offset*
   "2-D slice of 3-D texture to render into."
   nil)
 
 ;;;
 
 (def ^:dynamic *font-cache* "Where all the fonts are kept" nil)
-     
+
 
 (def ^:dynamic *font* "Current font" nil)
 
 ;;;
 
 (def ^:dynamic containers [
-                     APPLEFloatPixels
-                     ARBDrawBuffers
-                     ARBTextureFloat
-                     ARBHalfFloatPixel
-                     ARBFramebufferObject
-                     EXTFramebufferObject
-                     NVFloatBuffer
-                     ATITextureFloat
-                     EXTTextureRectangle
-                     ARBTextureRectangle
-                     EXTTransformFeedback
-                     EXTGeometryShader4
-                     GL20 GL15 GL14 GL13 GL12 GL11 GL30 GL31 GL32 GLU])
+                           APPLEFloatPixels
+                           ARBDrawBuffers
+                           ARBTextureFloat
+                           ARBHalfFloatPixel
+                           ARBFramebufferObject
+                           EXTFramebufferObject
+                           NVFloatBuffer
+                           ATITextureFloat
+                           EXTTextureRectangle
+                           ARBTextureRectangle
+                           EXTTransformFeedback
+                           EXTGeometryShader4
+                           GL20 GL15 GL14 GL13 GL12 GL11 GL30 GL31 GL32 GLU])
 
-(defn- get-fields [#^Class static-class]
+(defn- get-fields [^Class static-class]
   (. static-class getFields))
 
-(defn- get-methods [#^Class static-class]
+(defn- get-methods [^Class static-class]
   (. static-class getMethods))
 
-(defn- contains-field? [#^Class static-class field]
+(defn- contains-field? [^Class static-class field]
   (first
    (filter
     #{ (name field) }
-    (map #(.getName #^Field %) (get-fields static-class)))))
+    (map #(.getName ^Field %) (get-fields static-class)))))
 
 (defn- contains-method? [static-class method]
   (first
    (filter
     #{ (name method) }
-    (map #(.getName #^Method %) (get-methods static-class)))))
+    (map #(.getName ^Method %) (get-methods static-class)))))
 
 (defn- field-container [field]
   (first (filter #(contains-field? % field) containers)))
@@ -141,7 +141,7 @@
 
 (defn- get-gl-method [method]
   (let [method-name (name method)]
-    (first (filter #(= method-name (.getName #^Method %)) (mapcat get-methods containers)))))
+    (first (filter #(= method-name (.getName ^Method %)) (mapcat get-methods containers)))))
 
 (defn-memo enum-name
   "Takes the numeric value of a gl constant (i.e. GL_LINEAR), and gives the name"
@@ -149,9 +149,9 @@
   (if (= 0 enum-value)
     "NONE"
     (.getName
-     #^Field (some
-              #(if (= enum-value (.get #^Field % nil)) % nil)
-              (mapcat get-fields containers)))))     
+     ^Field (some
+             #(if (= enum-value (.get ^Field % nil)) % nil)
+             (mapcat get-fields containers)))))
 
 (defn check-error
   ([]
@@ -172,8 +172,8 @@
 
 (defn- get-parameters [method]
   (map
-   #(keyword (.getCanonicalName #^Class %))
-   (.getParameterTypes #^Method (get-gl-method method))))
+   #(keyword (.getCanonicalName ^Class %))
+   (.getParameterTypes ^Method (get-gl-method method))))
 
 (defn- get-doc-string [method]
   (str "Wrapper for " method "."))

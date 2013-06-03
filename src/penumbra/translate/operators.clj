@@ -9,8 +9,8 @@
 (ns penumbra.translate.operators
   (:use [clojure.walk]
         [penumbra.translate core]
-		[cantor :only (rectangle-factors)]
-        [penumbra.utils :only (defn-memo defvar- indexed separate)]
+        [cantor :only (rectangle-factors)]
+        [penumbra.utils :only (defn-memo indexed separate)]
         [penumbra.translate.core])
   (:require [clojure.zip :as zip]
             [penumbra.data :as data]))
@@ -44,8 +44,8 @@
 
 (defn element? [s]
   (or
-    (and (symbol? s) (re-find #"%$|%[0-9]+" (name s)))
-    (and (seq? s) (< 1 (count s)) (element? (first s)))))
+   (and (symbol? s) (re-find #"%$|%[0-9]+" (name s)))
+   (and (seq? s) (< 1 (count s)) (element? (first s)))))
 
 (defn-memo create-element [index]
   (symbol (str "%" (inc index))))
@@ -69,9 +69,9 @@
   (merge-meta
    x
    (cond
-    (element? x) (or (f x) x)
-    (sequential? x) (walk #(apply-element-transform f %) identity x)
-    :else x)))
+     (element? x) (or (f x) x)
+     (sequential? x) (walk #(apply-element-transform f %) identity x)
+     :else x)))
 
 ;;results
 
@@ -105,13 +105,13 @@
 
 (defn param-dispatch [t]
   (cond
-   (and (vector? t) (->> t first number?)) :dim
-   (number? t) :dim
-   (or (= :penumbra.opengl.texture/texture (type t)) (vector? t)) :elements ;;this should be using (satisfies? data/Data t) but that's surprisingly slow
-   (map? t) :params
-   (symbol? t) :symbol
-   (keyword? t) :keyword
-   :else (throw (Exception. (str "Don't recognize " (with-out-str (println t)))))))
+    (and (vector? t) (->> t first number?)) :dim
+    (number? t) :dim
+    (or (= :penumbra.opengl.texture/texture (type t)) (vector? t)) :elements ;;this should be using (satisfies? data/Data t) but that's surprisingly slow
+    (map? t) :params
+    (symbol? t) :symbol
+    (keyword? t) :keyword
+    :else (throw (Exception. (str "Don't recognize " (with-out-str (println t)))))))
 
 (defn group-elements [params]
   (concat
@@ -127,16 +127,16 @@
                   (replace-with x (add-meta x :tag (*typeof-param* v)))))
               params)
          (map (fn [[idx e]]
-                   (let [type (*typeof-element* e)]
-                     (fn [x]
-                       (when (and (element? x) (= idx (element-index x)))
-                         (add-meta x :tag type)))))
+                (let [type (*typeof-element* e)]
+                  (fn [x]
+                    (when (and (element? x) (= idx (element-index x)))
+                      (add-meta x :tag type)))))
               (indexed elements))))
        transform-expr))
 
 ;;special map operators
 
-(defvar- element-convolution-expr
+(def ^:private element-convolution-expr
   '(let [-half-dim (/ (dim :element) 2.0)
          -start    (max (float2 0.0) (- :coord (floor -half-dim)))
          -end      (min :dim (+ :coord (ceil -half-dim)))]
@@ -147,7 +147,7 @@
                -lookup   (:element (+ -offset -half-dim))]
            :body)))))
 
-(defvar- radius-convolution-expr
+(def ^:private radius-convolution-expr
   '(let [-radius (float2 (float :radius))
          -start  (max (float2 0.0) (float2 (- :coord -radius)))
          -end    (min :dim (+ :coord -radius (float2 1.0)))]
@@ -233,7 +233,7 @@
 
 ;;defreduce
 
-(defvar- reduce-program
+(def ^:private reduce-program
   '(let [-source-coord (* (floor :coord) 2)
          -x (> (.x -bounds) (.x -source-coord))
          -y (> (.y -bounds) (.y -source-coord))]

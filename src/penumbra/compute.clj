@@ -8,8 +8,7 @@
 
 (ns penumbra.compute
   (:require [penumbra.glsl.operators :as glsl]
-            [penumbra.opengl.texture :as tex]
-            [penumbra.utils :only (defmacro-)])
+            [penumbra.opengl.texture :as tex])
   (:use [penumbra.opengl.core :only (*render-to-screen?*)]
         [cantor :only (rectangle-factors)]))
 

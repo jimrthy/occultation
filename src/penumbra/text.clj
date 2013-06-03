@@ -9,7 +9,7 @@
 (ns penumbra.text
   (:use [penumbra.opengl]
         [penumbra.opengl.core :only [get-integer *view* *font-cache* *font*]]
-        [penumbra.utils :only (defvar defn-memo)])
+        [penumbra.utils :only [defn-memo]])
   (:import [java.awt Font]
            [java.awt.font TextAttribute]
            [org.newdawn.slick TrueTypeFont]
@@ -23,12 +23,12 @@
 (defn font [name & modifiers]
   (if-let [font (@*font-cache* (list* name modifiers))]
     font
-    (let [hash (apply hash-map modifiers)
-	      hash (update-in hash [:size] float)
-          hash (assoc hash :family name)
+    (let [hash (-> (apply hash-map modifiers)
+                   (update-in [:size] float)
+                   (assoc :family name))
           hash (zipmap (map text-attribute (keys hash)) (vals hash))
           font (TrueTypeFont. (Font. hash) true)]
-      (swap! *font-cache* #(assoc % (list* name modifiers) font))
+      (swap! *font-cache* assoc (list* name modifiers) font)
       font)))
 
 (defmacro with-font [f & body]
@@ -43,15 +43,12 @@
       (with-disabled [:texture-rectangle :lighting]
         (with-enabled [:texture-2d :blend]
           (let [blend-dst (get-integer :blend-dst)
-		blend-src (get-integer :blend-src)]
-	    (blend-func :src-alpha :one-minus-src-alpha)
-	    (let [[x-origin y-origin w h] @*view*]
-	      (with-projection (ortho-view x-origin (+ x-origin w) (+ y-origin h) y-origin -1 1)
-		(push-matrix
-		  (load-identity)
-		  (TextureImpl/bindNone)
-		  (.drawString *font* x y string))))
-	    (blend-func blend-src blend-dst)))))))
-
-
-
+                blend-src (get-integer :blend-src)]
+            (blend-func :src-alpha :one-minus-src-alpha)
+            (let [[x-origin y-origin w h] @*view*]
+              (with-projection (ortho-view x-origin (+ x-origin w) (+ y-origin h) y-origin -1 1)
+                (push-matrix
+                  (load-identity)
+                  (TextureImpl/bindNone)
+                  (.drawString *font* x y string))))
+            (blend-func blend-src blend-dst)))))))

@@ -15,8 +15,6 @@
 
 ;;;
 
-;;;
-
 (defn timed-fn
   "Creates a wrapper function which prepends any arguments with [dt t] in seconds."
   [clock f]
@@ -25,9 +23,9 @@
       (fn [& args]
         (let [now @clock]
           (try
-           (apply f (list* [(- now @previous) now] args))
-           (finally
-            (reset! previous now))))))))
+            (apply f (list* [(- now @previous) now] args))
+            (finally
+              (reset! previous now))))))))
 
 (defn create-thread
   "Creates a thread. 'outer-fn' is passed 'inner-fn' as its only argument."
@@ -40,22 +38,22 @@
   [app outer-fn inner-fn]
   (with-app app
     (try
-     (outer-fn
-      (fn []
-        (loop []
-          (controller/wait! app)
-          (try
-           (inner-fn)
-           (catch Exception e
-             (.printStackTrace e)
-             (controller/stop! app :exception)))
-          (when-not (controller/stopped? app)
-            (recur)))))
-     (catch Exception e
-       (.printStackTrace e)
-       (controller/stop! app :exception))
-     (finally
-      ))))
+      (outer-fn
+       (fn []
+         (loop []
+           (controller/wait! app)
+           (try
+             (inner-fn)
+             (catch Exception e
+               (.printStackTrace e)
+               (controller/stop! app :exception)))
+           (when-not (controller/stopped? app)
+             (recur)))))
+      (catch Exception e
+        (.printStackTrace e)
+        (controller/stop! app :exception))
+      (finally
+        ))))
 
 (defn pauseable-thread
   [app outer-fn inner-fn]
@@ -68,18 +66,18 @@
   [app outer-fn inner-fn]
   (with-app app
     (try
-     (outer-fn
-      (fn []
-        (loop []
-          (try
-           (inner-fn)
-           (catch Exception e
-             (.printStackTrace e)
-             (controller/stop! app :exception)))
-          (when-not (or (controller/paused? app) (controller/stopped? app))
-            (recur)))))
-     (catch Exception e
-       (.printStackTrace e)
-       (controller/stop! app :exception))
-     (finally
-      ))))
+      (outer-fn
+       (fn []
+         (loop []
+           (try
+             (inner-fn)
+             (catch Exception e
+               (.printStackTrace e)
+               (controller/stop! app :exception)))
+           (when-not (or (controller/paused? app) (controller/stopped? app))
+             (recur)))))
+      (catch Exception e
+        (.printStackTrace e)
+        (controller/stop! app :exception))
+      (finally
+        ))))

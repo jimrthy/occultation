@@ -1,14 +1,14 @@
-;   Copyright (c) Zachary Tellman. All rights reserved.
-;   The use and distribution terms for this software are covered by the
-;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;   which can be found in the file epl-v10.html at the root of this distribution.
-;   By using this software in any fashion, you are agreeing to be bound by
-;   the terms of this license.
-;   You must not remove this notice, or any other, from this software.
+;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;;   which can be found in the file epl-v10.html at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.translate.core
   (:use [clojure.pprint])
-  (:use [penumbra.utils :only (defmacro- defvar defvar-)])
+  (:use [penumbra.utils :only (defmacro- )])
   (:use [clojure.walk])
   (:import (java.text ParseException))
   (:import (java.io StringWriter))
@@ -18,25 +18,25 @@
 
 (def ^:dynamic *elements* nil)
 
-(def ^:dynamic *preprocessor* 
+(def ^:dynamic *preprocessor*
   "Initial processing step"
   nil)
 
-(def ^:dynamic *generator* 
+(def ^:dynamic *generator*
   "Anything returned by this is prepended to the beginning of the expression.
   Currently only used for imports, could also be used for anonymous functions."
   nil)
 
-(def ^:dynamic *parser* 
+(def ^:dynamic *parser*
   "Returns a string in the native language for the given s-expression."
   nil)
 (def ^:dynamic *transformer*
   "Macros, applied from leaf to root across entire expression."
   nil)
-(def ^:dynamic *inspector* 
+(def ^:dynamic *inspector*
   "Returns the type of the expression.  Applied as :tag metadata."
   nil)
-(def ^:dynamic *tagger* 
+(def ^:dynamic *tagger*
   "Specialized macro.  Should set :assignment and :defines tags."
   nil)
 
@@ -54,13 +54,13 @@
 
 (defn typeof [x]
   (cond
-   (integer? x) :int
-   (float? x) :float
-   (keyword? x) (*inspector* x)
-   (not (meta? x)) nil
-   (:numeric-value (meta x)) (typeof (:numeric-value (meta x)))
-   :else (:tag (meta x))))
-                                       
+    (integer? x) :int
+    (float? x) :float
+    (keyword? x) (*inspector* x)
+    (not (meta? x)) nil
+    (:numeric-value (meta x)) (typeof (:numeric-value (meta x)))
+    :else (:tag (meta x))))
+
 (defn add-meta [x & metadata]
   (if (meta? x)
     (with-meta x (apply assoc (list* (meta x) metadata)))
@@ -68,8 +68,8 @@
 
 (defn merge-meta [x x*]
   (cond
-   (meta? x*) (with-meta x* (merge (meta x) (meta x*)))
-   :else x*))
+    (meta? x*) (with-meta x* (merge (meta x) (meta x*)))
+    :else x*))
 
 (defn seq-wrap [s]
   (if (sequential? s) s (list s)))
@@ -98,12 +98,12 @@
      (do-tree f x 0))
   ([f x depth]
      (cond
-      (not (sequential? x))
-      (f x depth)
-      :else
-      (do
-        (f x depth)
-        (doseq [i x] (do-tree f i (inc depth)))))))
+       (not (sequential? x))
+       (f x depth)
+       :else
+       (do
+         (f x depth)
+         (doseq [i x] (do-tree f i (inc depth)))))))
 
 (defn print-tree [x]
   (println
@@ -135,16 +135,16 @@
 (defmacro- defn-try [name f message]
   `(defn ~name [x#]
      (try
-      (~f x#)
-      (catch Exception e#
-        (when-not @*translate-exception*
-          (let [ex# (Exception. (str "\n" ~message "\n"
-                                     (-> x# pprint with-out-str) "\n"
-                                     (with-out-str (.printStackTrace e#)))
-                                e#)]
-            (reset! *translate-exception* ex#)
-            (throw ex#)))
-        (throw e#)))))
+       (~f x#)
+       (catch Exception e#
+         (when-not @*translate-exception*
+           (let [ex# (Exception. (str "\n" ~message "\n"
+                                      (-> x# pprint with-out-str) "\n"
+                                      (with-out-str (.printStackTrace e#)))
+                                 e#)]
+             (reset! *translate-exception* ex#)
+             (throw ex#)))
+         (throw e#)))))
 
 (defmacro- defn-try-
   [name f message]
@@ -152,11 +152,11 @@
 
 (defmacro try-translate [& body]
   `(binding [*translate-exception* (atom nil)]
-    (try
-     (realize ~@body)
-     (finally
-      (when @*translate-exception*
-        (throw @*translate-exception*))))))
+     (try
+       (realize ~@body)
+       (finally
+         (when @*translate-exception*
+           (throw @*translate-exception*))))))
 
 ;;;
 
@@ -182,8 +182,8 @@
   (loop [body (list x)
          tail (-> x try-generate transform-expr*)]
     (if (empty? tail)
-     body
-     (recur
+      body
+      (recur
        (concat body (if (seq? (ffirst tail)) (apply concat tail) tail))
        (-> tail try-generate transform-expr*)))))
 
@@ -224,16 +224,16 @@
 (defn tag-first-appearance [x]
   (binding [*vars* (atom #{})]
     (->>
-      x
-      (scope-map
-       (fn [x]
-         (if (and (symbol? x)
-                    (:assignment (meta x))
-                    (or *let* (not (@*vars* x))))
-           (do
-             (swap! *vars* #(conj % x))
-             (add-meta x :first-appearance true))
-           (add-meta x :first-appearance false)))))))
+     x
+     (scope-map
+      (fn [x]
+        (if (and (symbol? x)
+                 (:assignment (meta x))
+                 (or *let* (not (@*vars* x))))
+          (do
+            (swap! *vars* #(conj % x))
+            (add-meta x :first-appearance true))
+          (add-meta x :first-appearance false)))))))
 
 (defn-try try-tag
   #(*tagger* %)
@@ -256,20 +256,20 @@
         types (distinct (filter identity (map typeof vars)))]
     (cond
       (empty? types)
-        nil
+      nil
       (= 1 (count types))
-        (first types)
+      (first types)
       :else
-        (throw (ParseException. (str "Ambiguous type for '" var "', cannot decide between " (with-out-str (prn types) (print-tree x))) 0)))))
+      (throw (ParseException. (str "Ambiguous type for '" var "', cannot decide between " (with-out-str (prn types) (print-tree x))) 0)))))
 
 (defn- tagged-vars [x]
   (let [vars (atom [])]
     (tree-map
-      (fn [x]
-        (if (:tag (meta x))
-          (swap! vars #(conj % x)))
-        x)
-      x)
+     (fn [x]
+       (if (:tag (meta x))
+         (swap! vars #(conj % x)))
+       x)
+     x)
     @vars))
 
 (defn tag-var
@@ -289,12 +289,12 @@
           tagged*       (tagged-vars x*)]
       (cond
         (empty? unknown-types)
-          x*
+        x*
         (and (= (count tagged) (count tagged*)) (< 20 iterations)) ;TODO: determine max sexpr depth and use that instead
-          (throw (Exception. (str "Unable to determine type of " (with-out-str (prn (keys unknown-types)) (print-tree x)))))
+        (throw (Exception. (str "Unable to determine type of " (with-out-str (prn (keys unknown-types)) (print-tree x)))))
         :else
-          (recur x* tagged* (inc iterations))))))
-        
+        (recur x* tagged* (inc iterations))))))
+
 ;;;
 
 (defn parse-lines
@@ -306,12 +306,12 @@
           (seq? exprs)
           (= 1 (count exprs))
           (seq? (first exprs)))
-      (parse-lines (first exprs) termination)
-      (let [exprs             (if (seq? (first exprs)) exprs (list exprs))
-            translated-exprs  (map #(*parser* %) exprs)
-            filtered-exprs    (filter #(not= (.trim %) "") translated-exprs)
-            terminated-exprs  (map #(if (.endsWith % "\n") % (str % termination "\n")) filtered-exprs)]
-        (apply str terminated-exprs)))))
+       (parse-lines (first exprs) termination)
+       (let [exprs             (if (seq? (first exprs)) exprs (list exprs))
+             translated-exprs  (map #(*parser* %) exprs)
+             filtered-exprs    (filter #(not= (.trim %) "") translated-exprs)
+             terminated-exprs  (map #(if (.endsWith % "\n") % (str % termination "\n")) filtered-exprs)]
+         (apply str terminated-exprs)))))
 
 (defn-try parse
   #(*parser* %)

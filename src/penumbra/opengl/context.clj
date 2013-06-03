@@ -62,8 +62,7 @@
                *read-format* cap/read-format
                *renderer* basic-renderer]
        (try
-        ~@body
-        (finally
-         (when-not context-exists?#
-           (destroy context#)))))))
-
+         ~@body
+         (finally
+           (when-not context-exists?#
+             (destroy context#)))))))

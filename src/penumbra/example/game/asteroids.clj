@@ -17,7 +17,7 @@
 
 ;;;
 
-(def *dim* (vec2 10 10))
+(def ^:dynamic *dim* (vec2 10 10))
 
 (defn wrap
   "Makes the position wrap around from right to left, bottom to top"
@@ -381,5 +381,5 @@
 
 (defn start []
   (app/start
-   {:reshape reshape, :init init, :key-press key-press, :update update, :display display} 
+   {:reshape reshape, :init init, :key-press key-press, :update update, :display display}
    {:dim *dim*}))

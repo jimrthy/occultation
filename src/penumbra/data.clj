@@ -30,10 +30,10 @@
     v))
 
 (defmacro with-acquired [d & body]
-  `(do
+  `(try
      (acquire! d)
      ~@body
-     (release! d)))
+     (finally (release! d))))
 
 (defn available? [d]
   (and (<= (refcount d) 0)
@@ -41,6 +41,7 @@
 
 ;;;
 
+;; core.cache?
 (defprotocol DataCache
   (max-count! [c count])
   (max-size! [c size])
@@ -60,52 +61,52 @@
            total-size (ref 0)
            total-count (ref 0)]
        (reify
-        DataCache
-        (max-count!
-         [_ count]
-         (dosync (ref-set max-count count)))
-        (max-size!
-         [_ size]
-         (dosync (ref-set max-size size)))
-        (locate!
-         [_ sig]
-         (dosync
-          (let [match (some #(when (and (available? %) (matches? % sig)) %) @cache)]
-            (when match
-              (refcount! match 1))
-            match)))
-        (add!
-         [_ data]
-         (dosync
-          (let [max-count @max-count
-                max-size @max-size]
-            (when (or
-                   (and (pos? max-size) (>= @total-size max-size))
-                   (and (pos? max-count) (>= @total-count max-count)))
-              (let [[available not-available] (partition available? @cache)]
-                (doseq [d available]
-                  (destroy! d))
-                (ref-set cache not-available)
-                (alter total-size #(- % (apply + (map sizeof available))))
-                (alter total-count #(- % (count available)))))
-            (alter cache #(conj % data))
-            (alter total-count inc)
-            (alter total-size #(+ % (sizeof data))))))
-        (stats
-         [_]
-         {:size (/ @total-size 10e6)
-          :count @total-count})
-        (remove!
-         [_ data]
-         (dosync
-          (alter cache #(disj % data))
-          (alter total-count dec)
-          (alter total-size #(- % (sizeof data)))))
-        (clear!
-         [_]
-         (dosync
-          (doseq [d @cache]
-            (destroy! d))))))))
+         DataCache
+         (max-count!
+           [_ count]
+           (dosync (ref-set max-count count)))
+         (max-size!
+           [_ size]
+           (dosync (ref-set max-size size)))
+         (locate!
+           [_ sig]
+           (dosync
+            (let [match (some #(when (and (available? %) (matches? % sig)) %) @cache)]
+              (when match
+                (refcount! match 1))
+              match)))
+         (add!
+           [_ data]
+           (dosync
+            (let [max-count @max-count
+                  max-size @max-size]
+              (when (or
+                     (and (pos? max-size) (>= @total-size max-size))
+                     (and (pos? max-count) (>= @total-count max-count)))
+                (let [[available not-available] (partition available? @cache)]
+                  (doseq [d available]
+                    (destroy! d))
+                  (ref-set cache not-available)
+                  (alter total-size #(- % (apply + (map sizeof available))))
+                  (alter total-count #(- % (count available)))))
+              (alter cache #(conj % data))
+              (alter total-count inc)
+              (alter total-size #(+ % (sizeof data))))))
+         (stats
+           [_]
+           {:size (/ @total-size 10e6)
+            :count @total-count})
+         (remove!
+           [_ data]
+           (dosync
+            (alter cache #(disj % data))
+            (alter total-count dec)
+            (alter total-size #(- % (sizeof data)))))
+         (clear!
+           [_]
+           (dosync
+            (doseq [d @cache]
+              (destroy! d))))))))
 
 ;;;
 

@@ -22,45 +22,45 @@
 (defn- create-queue [app clock]
   (let [heap (ref (sorted-set-by #(- (compare (first %2) (first %1)))))
         queue (reify
-               Queue
-               (init- [this]
-                      (start-consumer-thread this))
-               (start-consumer-thread [_]
-                                      (.start
-                                       (Thread.
-                                        (fn []
-                                          (loop/basic-loop
-                                           app
-                                           (fn [x] (x))
-                                           (fn []
-                                             (if-let [actions
-                                                      (dosync
-                                                       (let [now @clock
-                                                             top (take-while #(>= now (first %)) @heap)]
-                                                         (when-not (empty? top)
-                                                           (alter heap #(apply disj (list* % top)))
-                                                           top)))]
-                                               (doseq [a (map second actions)]
-                                                 (a))
-                                               (Thread/sleep 1))))
-                                          (println "exiting consumer thread")))))
-               (enqueue- [this delay f]
-                         (dosync
-                          (alter heap #(conj % [(+ @clock delay) f])))
-                         nil)
-               (periodic-enqueue- [this hz f]
-                                  (let [hz (atom hz)
-                                        target (atom (+ @clock (/ 1 @hz)))]
-                                    (letfn [(f* []
-                                                (let [start @clock]
-                                                  (binding [app/*hz* hz]
-                                                    (f))
-                                                  (let [hz @hz]
-                                                    (when (pos? hz)
-                                                      (enqueue- this (+ (/ 1 hz) (- @target start)) f*)
-                                                      (swap! target #(+ % (/ 1 hz)))))))]
-                                      (enqueue- this (/ 1 @hz) f*)))
-                                  nil))]
+                Queue
+                (init- [this]
+                  (start-consumer-thread this))
+                (start-consumer-thread [_]
+                  (.start
+                   (Thread.
+                    (fn []
+                      (loop/basic-loop
+                       app
+                       (fn [x] (x))
+                       (fn []
+                         (if-let [actions
+                                  (dosync
+                                   (let [now @clock
+                                         top (take-while #(>= now (first %)) @heap)]
+                                     (when-not (empty? top)
+                                       (alter heap #(apply disj (list* % top)))
+                                       top)))]
+                           (doseq [a (map second actions)]
+                             (a))
+                           (Thread/sleep 1))))
+                      (println "exiting consumer thread")))))
+                (enqueue- [this delay f]
+                  (dosync
+                   (alter heap #(conj % [(+ @clock delay) f])))
+                  nil)
+                (periodic-enqueue- [this hz f]
+                  (let [hz (atom hz)
+                        target (atom (+ @clock (/ 1 @hz)))]
+                    (letfn [(f* []
+                              (let [start @clock]
+                                (binding [app/*hz* hz]
+                                  (f))
+                                (let [hz @hz]
+                                  (when (pos? hz)
+                                    (enqueue- this (+ (/ 1 hz) (- @target start)) f*)
+                                    (swap! target #(+ % (/ 1 hz)))))))]
+                      (enqueue- this (/ 1 @hz) f*)))
+                  nil))]
     (init- queue)
     queue))
 
@@ -81,12 +81,12 @@
                               (alter hash #(assoc % clock q))
                               q))))]
     (reify
-     QueueHash
-     (init! [_]
-            '(doseq [q (vals @hash)]
-              (init- q)))
-     (enqueue! [_ clock delay f]
-               (enqueue- (find-or-create clock) delay f))
-     (periodic-enqueue! [_ clock hz f]
-                        (periodic-enqueue- (find-or-create clock) hz f)))))
+      QueueHash
+      (init! [_]
+        '(doseq [q (vals @hash)]
+           (init- q)))
+      (enqueue! [_ clock delay f]
+        (enqueue- (find-or-create clock) delay f))
+      (periodic-enqueue! [_ clock hz f]
+        (periodic-enqueue- (find-or-create clock) hz f)))))
 

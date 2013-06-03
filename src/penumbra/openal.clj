@@ -37,9 +37,9 @@
 
 (defn source [source property & args]
   (cond
-   (< 1 (count args)) (source-array source (enum property) (FloatBuffer/wrap (float-array args)))
-   (integer? (first args)) (source-i source (enum property) (first args))
-   :else (source-f source (enum property) (first args))))
+    (< 1 (count args)) (source-array source (enum property) (FloatBuffer/wrap (float-array args)))
+    (integer? (first args)) (source-i source (enum property) (first args))
+    :else (source-f source (enum property) (first args))))
 
 (defn gen-source []
   (let [ary (int-array 1)]
@@ -59,11 +59,11 @@
         buf (gen-buffer)
         src (gen-source)]
     (try
-     (buffer-data buf (.format wav) (.data wav) (.samplerate wav))
-     (source src :buffer buf)
-     src
-     (finally
-      (.dispose wav)))))
+      (buffer-data buf (.format wav) (.data wav) (.samplerate wav))
+      (source src :buffer buf)
+      src
+      (finally
+        (.dispose wav)))))
 
 (comment (play (load-wav-file "/path/to/wav/file")))
 

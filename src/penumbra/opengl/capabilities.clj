@@ -22,17 +22,17 @@
 
 (defn- valid-read-format? [type tuple format]
   (try
-   (let [tex (tex/create-texture
-              :target :texture-rectangle
-              :dim [16 16]
-              :internal-format format
-              :pixel-format (tex/tuple->pixel-format tuple)
-              :internal-type type)]
-     ;;TODO: test that if we write to it, we can read back the same thing
-     (data/destroy! tex)
-     (map #(-> tex data/params %) [:internal-format :pixel-format :internal-type]))
-   (catch Exception e
-     false)))
+    (let [tex (tex/create-texture
+               :target :texture-rectangle
+               :dim [16 16]
+               :internal-format format
+               :pixel-format (tex/tuple->pixel-format tuple)
+               :internal-type type)]
+      ;;TODO: test that if we write to it, we can read back the same thing
+      (data/destroy! tex)
+      (map #(-> tex data/params %) [:internal-format :pixel-format :internal-type]))
+    (catch Exception e
+      false)))
 
 (defn-memo read-format [type tuple]
   (let [candidates
@@ -48,27 +48,27 @@
         fb (fb/gen-frame-buffer)]
     (fb/bind-frame-buffer fb)
     (try
-     (let [tex (tex/create-texture
-                :target :texture-rectangle
-                :dim [16 16]
-                :internal-format format
-                :pixel-format (tex/tuple->pixel-format tuple)
-                :internal-type type)]
-       (fb/attach tex 0)
-       (try
-        (when (fb/frame-buffer-ok?)
-          [format (tex/tuple->pixel-format tuple) type])
-        (catch Exception e
-          false)
-        (finally
-         (when tex
-           (data/destroy! tex)))))
-     (catch Exception e
-       false)
-     (finally
-      (fb/attach nil 0)
-      (fb/destroy-frame-buffer fb)
-      (fb/bind-frame-buffer curr)))))
+      (let [tex (tex/create-texture
+                 :target :texture-rectangle
+                 :dim [16 16]
+                 :internal-format format
+                 :pixel-format (tex/tuple->pixel-format tuple)
+                 :internal-type type)]
+        (fb/attach tex 0)
+        (try
+          (when (fb/frame-buffer-ok?)
+            [format (tex/tuple->pixel-format tuple) type])
+          (catch Exception e
+            false)
+          (finally
+            (when tex
+              (data/destroy! tex)))))
+      (catch Exception e
+        false)
+      (finally
+        (fb/attach nil 0)
+        (fb/destroy-frame-buffer fb)
+        (fb/bind-frame-buffer curr)))))
 
 (defn-memo write-format [type tuple]
   (let [formats (filter
@@ -83,11 +83,11 @@
     (slate/with-slate
       (doseq [[type tuple] permutations]
         (println
-          (name type) tuple
-          "\n  R " (if-let [format (read-format type tuple)]
-                     (first format)
-                     "NONE")
-          "\n  W " (if-let [format (write-format type tuple)]
-                     (first format)
-                     "NONE"))))))
+         (name type) tuple
+         "\n  R " (if-let [format (read-format type tuple)]
+                    (first format)
+                    "NONE")
+         "\n  W " (if-let [format (write-format type tuple)]
+                    (first format)
+                    "NONE"))))))
 

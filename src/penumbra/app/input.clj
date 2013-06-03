@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app.input
-  (:use [penumbra.utils :only [defvar indexed]])
+  (:use [penumbra.utils :only [indexed]])
   (:require [penumbra.app.window :as window]
             [penumbra.app.event :as event])
   (:import [org.lwjgl.input Keyboard Mouse]))
@@ -32,12 +32,12 @@
         name (Keyboard/getKeyName key)]
     [name
      (cond
-      (= key Keyboard/KEY_DELETE) :delete
-      (= key Keyboard/KEY_BACK) :back
-      (= key Keyboard/KEY_RETURN) :return
-      (= key Keyboard/KEY_ESCAPE) :escape
-      (not= 0 (int char)) (str char)
-      :else (-> name .toLowerCase keyword))]))
+       (= key Keyboard/KEY_DELETE) :delete
+       (= key Keyboard/KEY_BACK) :back
+       (= key Keyboard/KEY_RETURN) :return
+       (= key Keyboard/KEY_ESCAPE) :escape
+       (not= 0 (int char)) (str char)
+       :else (-> name .toLowerCase keyword))]))
 
 (defn- handle-keyboard [app pressed-keys]
   (Keyboard/poll)
@@ -80,28 +80,28 @@
           (when (not (zero? dw))
             (event/publish! app :mouse-wheel dw))
           (cond
-           ;;mouse down/up 
-           (and (zero? dx) (zero? dy) button?)
-           (do
-             (event/publish! app (if button-state :mouse-down :mouse-up) [x y] (mouse-button-name button))
-             (if button-state
-               (recur (assoc mouse-buttons (mouse-button-name button) [x y]))
-               (let [loc (mouse-buttons button)]
-                 (event/publish! app :mouse-click loc (mouse-button-name button))
-                 (recur (dissoc mouse-buttons (mouse-button-name button))))))
-           ;;mouse-move
-           (and
-            (empty? mouse-buttons)
-            (or (not (zero? dx)) (not (zero? dy))))
-           (do
-             (event/publish! app :mouse-move [dx dy] [x y])
-             (recur mouse-buttons))
-           ;;mouse-drag
-           :else
-           (do
-             (doseq [b (keys mouse-buttons)]
-               (event/publish! app :mouse-drag [dx dy] [x y] b))
-             (recur mouse-buttons))))
+            ;;mouse down/up
+            (and (zero? dx) (zero? dy) button?)
+            (do
+              (event/publish! app (if button-state :mouse-down :mouse-up) [x y] (mouse-button-name button))
+              (if button-state
+                (recur (assoc mouse-buttons (mouse-button-name button) [x y]))
+                (let [loc (mouse-buttons button)]
+                  (event/publish! app :mouse-click loc (mouse-button-name button))
+                  (recur (dissoc mouse-buttons (mouse-button-name button))))))
+            ;;mouse-move
+            (and
+             (empty? mouse-buttons)
+             (or (not (zero? dx)) (not (zero? dy))))
+            (do
+              (event/publish! app :mouse-move [dx dy] [x y])
+              (recur mouse-buttons))
+            ;;mouse-drag
+            :else
+            (do
+              (doseq [b (keys mouse-buttons)]
+                (event/publish! app :mouse-drag [dx dy] [x y] b))
+              (recur mouse-buttons))))
         mouse-buttons))))
 
 ;;;
@@ -110,27 +110,27 @@
   (let [keys (ref {})
         buttons (ref {})]
     (reify
-     InputHandler
-     (init! [_]
-            (if (Keyboard/isCreated)
-              (do
-                (Keyboard/create)
-                (Mouse/create))
-              (dosync
-               (doseq [key (keys @keys)]
-                 (event/publish! app :key-release key))
-               (doseq [[b loc] @buttons]
-                 (event/publish! app :mouse-up loc b)
-                 (event/publish! app :mouse-click loc b))
-               (ref-set keys {})
-               (ref-set buttons {}))))
-     (destroy! [_]
-               (Keyboard/destroy)
-               (Mouse/destroy))
-     (key-repeat! [_ flag] (Keyboard/enableRepeatEvents flag))
-     (key-pressed? [_ key] ((-> @keys vals set) key))
-     (button-pressed? [_ button] (@buttons button))
-     (mouse-location [_] (let [[w h] (window/size app)]
-                           [(Mouse/getX) (- h (Mouse/getY))]))
-     (handle-mouse! [_] (dosync (alter buttons #(handle-mouse app %))))
-     (handle-keyboard! [_] (dosync (alter keys #(handle-keyboard app %)))))))
+      InputHandler
+      (init! [_]
+        (if (Keyboard/isCreated)
+          (do
+            (Keyboard/create)
+            (Mouse/create))
+          (dosync
+           (doseq [key (keys @keys)]
+             (event/publish! app :key-release key))
+           (doseq [[b loc] @buttons]
+             (event/publish! app :mouse-up loc b)
+             (event/publish! app :mouse-click loc b))
+           (ref-set keys {})
+           (ref-set buttons {}))))
+      (destroy! [_]
+        (Keyboard/destroy)
+        (Mouse/destroy))
+      (key-repeat! [_ flag] (Keyboard/enableRepeatEvents flag))
+      (key-pressed? [_ key] ((-> @keys vals set) key))
+      (button-pressed? [_ button] (@buttons button))
+      (mouse-location [_] (let [[w h] (window/size app)]
+                            [(Mouse/getX) (- h (Mouse/getY))]))
+      (handle-mouse! [_] (dosync (alter buttons #(handle-mouse app %))))
+      (handle-keyboard! [_] (dosync (alter keys #(handle-keyboard app %)))))))

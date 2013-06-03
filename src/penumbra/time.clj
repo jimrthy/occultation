@@ -6,8 +6,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns penumbra.time
-  (:use [penumbra.utils :only [defn-memo]]))
+(ns penumbra.time)
 
 (defn wall-time []
   (/ (double (System/nanoTime)) (double 1e9)))
@@ -33,9 +32,3 @@
                offset (@lookup t0)]
            (reset! lookup #(+ offset (* speed (- % t0)))))
          nil)))))
-
-
-
-
-
-

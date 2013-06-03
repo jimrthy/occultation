@@ -9,7 +9,7 @@
 (ns ^{:author "Zachary Tellman"}
   penumbra.opengl
   (:use [penumbra.opengl core]
-        [penumbra.utils :only (defn-memo defmacro- defvar)])
+        [penumbra.utils :only (defn-memo defmacro-)])
   (:require [penumbra.opengl.texture :as tex]
             [penumbra.data :as data]
             [penumbra.opengl.frame-buffer :as fb]
@@ -18,7 +18,7 @@
             [penumbra.glsl.core :as glsl]
             [penumbra.opengl.geometry :as geometry]
             [penumbra.opengl.teapot :as t]
-	    [clojure.string :as string])
+            [clojure.string :as string])
   (:import (org.lwjgl BufferUtils)
            (java.io File ByteArrayOutputStream ByteArrayInputStream)
            (javax.imageio ImageIO)
@@ -29,10 +29,10 @@
 (defmacro- import-fn [sym]
   (if (meta (eval sym))
     (let [m (meta (eval sym))
-	  m (meta (intern (:ns m) (:name m)))
-	  n (:name m)
-	  arglists (:arglists m)
-	  doc (:doc m)]
+          m (meta (intern (:ns m) (:name m)))
+          n (:name m)
+          arglists (:arglists m)
+          doc (:doc m)]
       (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym)))
     (let [sym-name (symbol (last (string/split (str sym) #"/")))]
       (list `def sym-name (eval sym)))))
@@ -55,25 +55,25 @@
   "Enables the param(s) within the inner scope.  Will subsequently disable field if and only if it was previously disabled."
   [param-or-param-seq & body]
   `(let [e# (filter
-              (fn [a#] (not (enabled? (enum a#))))
-              (if (not (sequential? ~param-or-param-seq)) [~param-or-param-seq] ~param-or-param-seq))]
+             (fn [a#] (not (enabled? (enum a#))))
+             (if (not (sequential? ~param-or-param-seq)) [~param-or-param-seq] ~param-or-param-seq))]
      (doseq [b# e#]
        (enable (enum b#)))
      (try ~@body
-      (finally
-        (doall (map (fn [c#] (disable (enum c#))) e#))))))
+          (finally
+            (doall (map (fn [c#] (disable (enum c#))) e#))))))
 
 (defmacro with-disabled
   "Disables the param(s) within the inner scope.  Will subsequently enable field if and only if it was previously enabled."
   [e & body]
   `(let [e# (filter
-              (fn [a#] (enabled? (enum a#)))
-              (if (not (sequential? ~e)) [~e] ~e))]
+             (fn [a#] (enabled? (enum a#)))
+             (if (not (sequential? ~e)) [~e] ~e))]
      (doseq [b# e#]
        (disable (enum b#)))
      (try ~@body
-      (finally
-       (doall (map (fn [c#] (enable (enum c#))) e#))))))
+          (finally
+            (doall (map (fn [c#] (enable (enum c#))) e#))))))
 
 ;;;
 
@@ -106,10 +106,10 @@
      (gl-clear :depth-buffer-bit)
      (gl-clear :color-buffer-bit))
   ([r g b]
-    (clear r g b 1))
+     (clear r g b 1))
   ([r g b a]
-    (clear-color r g b a)
-    (clear)))
+     (clear-color r g b a)
+     (clear)))
 
 (gl-import- glViewport gl-viewport)
 
@@ -126,11 +126,11 @@
    'rect' is of the form [x y w h]."
   [rect & body]
   `(let [old-view# @*view*]
-    (apply viewport ~rect)
-    (try
-      ~@body
-      (finally
-        (apply viewport old-view#)))))
+     (apply viewport ~rect)
+     (try
+       ~@body
+       (finally
+         (apply viewport old-view#)))))
 
 (gl-import- glOrtho gl-ortho)
 (gl-import- gluPerspective glu-perspective)
@@ -139,9 +139,9 @@
   "Sets the projection matrix within the inner scope.  'projection' must actively set the projection matrix, i.e. call (ortho-view ...)"
   [projection & body]
   `(do
-    (gl-matrix-mode :projection) (gl-push-matrix) ~projection (gl-matrix-mode :modelview)
-    ~@body
-    (gl-matrix-mode :projection) (gl-pop-matrix) (gl-matrix-mode :modelview)))
+     (gl-matrix-mode :projection) (gl-push-matrix) ~projection (gl-matrix-mode :modelview)
+     ~@body
+     (gl-matrix-mode :projection) (gl-pop-matrix) (gl-matrix-mode :modelview)))
 
 (defn ortho-view
   "Create orthographic view, where distant objects don't get smaller."
@@ -365,8 +365,8 @@
      (when tex
        (let [target (-> tex data/params :target)
              [tw th] (if (= :texture-rectangle target)
-                     (tex/dim tex)
-                     [1 1])]
+                       (tex/dim tex)
+                       [1 1])]
          (with-enabled target
            (with-texture tex
              (try-with-program nil

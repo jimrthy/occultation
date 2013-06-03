@@ -12,8 +12,8 @@
         [penumbra.translate core operators]
         [penumbra.glsl core]
         [penumbra.opengl.context :only (draw-frame-buffer)]
-	[clojure.pprint :only (pprint)]
-	[penumbra.utils :only (separate indexed defvar- defn-memo)])
+        [clojure.pprint :only (pprint)]
+        [penumbra.utils :only (separate indexed defn-memo)])
   (:require [clojure.zip :as zip]
             [penumbra.translate.c :as c]
             [penumbra.opengl.texture :as tex]
@@ -40,12 +40,12 @@
     :int4    x
     nil      (throw (Exception. (str "Cannot typecast \n" (with-out-str (print-tree x)))))))
 
-(defvar- type-format
+(def ^:private type-format
   {:color :unsigned-byte
    :color2 :unsigned-byte
    :color3 :unsigned-byte
    :color4 :unsigned-byte
-   :float :float       
+   :float :float
    :float2 :float
    :float3 :float
    :float4 :float
@@ -54,7 +54,7 @@
    :int3 :int
    :int4 :int})
 
-(defvar- texture-tuple
+(def ^:private texture-tuple
   {:float 1
    :float2 2
    :float3 3
@@ -64,7 +64,7 @@
    :int3 3
    :int4 4})
 
-(defvar- texture-type
+(def ^:private texture-type
   {[:unsigned-byte 1] :float
    [:unsigned-byte 2] :float2
    [:unsigned-byte 3] :float3
@@ -78,9 +78,9 @@
    [:int 3] :int3
    [:int 4] :int4})
 
-(defvar- swizzle { 1 '.x, 2 '.xy, 3 '.xyz, 4 '.xyzw })
+(def ^:private swizzle { 1 '.x, 2 '.xy, 3 '.xyz, 4 '.xyzw })
 
-(defvar- sampler-type
+(def ^:private sampler-type
   {[:texture-1d 1] :sampler1D
    [:texture-rectangle 1] :sampler1DRect
    [:texture-2d 2] :sampler2D
@@ -124,18 +124,18 @@
          `(~'texture2DRect
            ~tex-name
            ~(cond
-             (nil? location)
-             :coord
-             (= :float2 (typeof location))
-             location
-             (= :float (typeof location))
-             `(~'float2 (floor (mod ~location (.x (~'dim ~element))))
-                        (floor (div ~location (.x (~'dim ~element)))))
-             (= :int (typeof location))
-             `(~'float2 (floor (mod (float ~location) (.x (~'dim ~element))))
-                        (floor (div (float ~location) (.x (~'dim ~element)))))
-             :else
-             (println "Don't recognize index type" location (typeof location))))
+              (nil? location)
+              :coord
+              (= :float2 (typeof location))
+              location
+              (= :float (typeof location))
+              `(~'float2 (floor (mod ~location (.x (~'dim ~element))))
+                         (floor (div ~location (.x (~'dim ~element)))))
+              (= :int (typeof location))
+              `(~'float2 (floor (mod (float ~location) (.x (~'dim ~element))))
+                         (floor (div (float ~location) (.x (~'dim ~element)))))
+              :else
+              (println "Don't recognize index type" location (typeof location))))
          [:texture-3d 3]
          `(~'texture3D ~tex-name ~location)
          [:texture-rectangle 3]
@@ -155,11 +155,11 @@
 
 ;;;
 
-(defvar- fixed-operator-transform
+(def ^:private fixed-operator-transform
   '((<- -coord (-> :multi-tex-coord0 .xy (* -dim)))
     (<- :position (* :model-view-projection-matrix :vertex))))
 
-(defvar- fixed-render-transform
+(def ^:private fixed-render-transform
   `{:position (* :model-view-projection-matrix :vertex)})
 
 (defn- wrap-uniform
@@ -179,12 +179,12 @@
   [x]
   (let [index
         '((<-
-          -index
-          (-> -coord .y floor (* (.x -dim)) (+ (-> -coord .x floor)))))]
+           -index
+           (-> -coord .y floor (* (.x -dim)) (+ (-> -coord .x floor)))))]
     (if ((set (flatten x)) :index)
       (concat
-        index
-        (apply-transforms [(replace-with :index #^:float '-index)] x))
+       index
+       (apply-transforms [(replace-with :index ^:float '-index)] x))
       x)))
 
 (defn prepend-lighting
@@ -211,7 +211,7 @@
       (declare (varying (with-meta -coord {:tag :float2})))
       (declare (uniform (with-meta -dim {:tag :float2})))
       (declare (uniform (with-meta -bounds {:tag :float2}))))
-   (-> (list 'defn 'void 'main [] (-> x prepend-index)) prepend-lighting)))             
+   (-> (list 'defn 'void 'main [] (-> x prepend-index)) prepend-lighting)))
 
 (defn- create-operator
   ([body]
@@ -243,8 +243,8 @@
                  (apply-transforms
                   (list
                    #(when (first= % 'dim) (transform-dim %))
-                   (replace-with :coord #^:float2 '-coord)
-                   (replace-with :dim #^:float2 '-dim)))
+                   (replace-with :coord ^:float2 '-coord)
+                   (replace-with :dim ^:float2 '-dim)))
                  results-fn
                  wrap-and-prepend)]
        (list 'do declarations body))))
@@ -268,11 +268,11 @@
                      p
                      (do
                        (let [processed-info (f program (:params info) (:dim info) (:elements info))
-                            processed-program (program-creator processed-info)
-                            hash {:program processed-program
-                                  :results (:results processed-info)}]
-                        (swap! programs #(assoc % sig hash))
-                        hash))))]
+                             processed-program (program-creator processed-info)
+                             hash {:program processed-program
+                                   :results (:results processed-info)}]
+                         (swap! programs #(assoc % sig hash))
+                         hash))))]
         (assoc hash
           :elements (:elements info)
           :params (:params info)
@@ -284,10 +284,10 @@
 (defn set-params [params]
   (doseq [[n v] params]
     (apply
-      uniform
-      (list*
-        (param-lookup n)
-        (seq-wrap v)))))
+     uniform
+     (list*
+      (param-lookup n)
+      (seq-wrap v)))))
 
 ;;;
 
@@ -393,7 +393,7 @@
         vertex   (reduce (fn [x [k v]] (tag-var k v x)) vertex (:attributes program))
         vertex   (:program (process-map vertex params dim elements))
         attribs  (list 'do (process-attributes program))
-        varying  (->> program :vertex results keys (filter symbol?))  
+        varying  (->> program :vertex results keys (filter symbol?))
         varying  (zipmap varying (map #(typeof-var % vertex) varying))]
     {:varying varying
      :vertex (list 'do
@@ -413,9 +413,9 @@
 (defn- process-renderer
   [program params dim elements]
   (let [program (merge
-                {:vertex fixed-render-transform
-                 :fragment :frag-color}
-                program)]
+                 {:vertex fixed-render-transform
+                  :fragment :frag-color}
+                 program)]
     (let [vertex (process-vertex program params dim elements)
           fragment (process-fragment program (:varying vertex) params dim elements)]
       (merge vertex fragment))))

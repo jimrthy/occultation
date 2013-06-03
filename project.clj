@@ -4,6 +4,7 @@
                  [kephale/cantor "0.4.1"]
                  [org.clojure/clojure "1.4.0"] 
                  [org.clojure/math.combinatorics "0.0.2"]
+                 [org.clojure/core.incubator "0.1.2"]
                  [kephale/lwjgl "2.9.0"]
                  [kephale/lwjgl-util "2.9.0"]
                  [kephale/lwjgl-natives "2.9.0"]]

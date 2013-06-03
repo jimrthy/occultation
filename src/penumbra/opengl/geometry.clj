@@ -1,10 +1,10 @@
-;   Copyright (c) Zachary Tellman. All rights reserved.
-;   The use and distribution terms for this software are covered by the
-;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;   which can be found in the file epl-v10.html at the root of this distribution.
-;   By using this software in any fashion, you are agreeing to be bound by
-;   the terms of this license.
-;   You must not remove this notice, or any other, from this software.
+;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;;   which can be found in the file epl-v10.html at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
 
 (ns ^{:skip-wiki true}
   penumbra.opengl.geometry
@@ -153,7 +153,7 @@
       4 (attribute-4f loc (args 0) (args 1) (args 2) (args 3)))))
 
 (def basic-renderer
-  (reify 
+  (reify
     Renderer
     (vertex- [_ x y z] (gl-vertex x y z))
     (texture- [_ u] (gl-tex-1 u))
@@ -170,19 +170,19 @@
     (with-transform- [_ f]
       (gl-push-matrix)
       (try
-       (f)
-       (finally
-        (gl-pop-matrix))))))
+        (f)
+        (finally
+          (gl-pop-matrix))))))
 
 ;;;
 
 (def ^:dynamic *outer-renderer* nil)
 
-(def ^:dynamic *intra-primitive-transform* 
+(def ^:dynamic *intra-primitive-transform*
   "Have we encountered an intra-primitive (i.e. *inside-begin-end* is true) transformation"
   false)
 
-(def ^:dynamic *transform-matrix* 
+(def ^:dynamic *transform-matrix*
   "The transform matrix for intra-primtive transforms"
   nil)
 
@@ -243,17 +243,17 @@
                         "Transform calls (rotate, translate, etc.) are allowed within this scope, but will force an intermediate transform step.")]
     `(defmacro ~(symbol (str "draw-" (name primitive-type)))
        ~doc-string
-      [& body#]
-      `(binding [*primitive-type* ~'~primitive-type
-                 *transform-matrix* (ref (identity-matrix))
-                 *intra-primitive-transform* (ref false)
-                 *outer-renderer* *renderer*
-                 *renderer* intra-primitive-renderer
-                 ]
-         (gl-begin ~'~(enum primitive-type))
-         (try
-          ~@body#
-          (finally
-           (gl-end)))))))
+       [& body#]
+       `(binding [*primitive-type* ~'~primitive-type
+                  *transform-matrix* (ref (identity-matrix))
+                  *intra-primitive-transform* (ref false)
+                  *outer-renderer* *renderer*
+                  *renderer* intra-primitive-renderer
+                  ]
+          (gl-begin ~'~(enum primitive-type))
+          (try
+            ~@body#
+            (finally
+              (gl-end)))))))
 
 ;;;

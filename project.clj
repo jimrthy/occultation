@@ -1,4 +1,4 @@
-(defproject kephale/penumbra "0.6.4-SNAPSHOT"
+(defproject kephale/penumbra "0.6.4"
   :description "An idiomatic wrapper for OpenGL."
   :dependencies [[slick-util "1.0.0"]
                  [kephale/cantor "0.4.1"]

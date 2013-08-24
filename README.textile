@@ -4,7 +4,12 @@ From the original readme:
 
 "Penumbra is an idiomatic wrapper for OpenGL in Clojure, by way of LWJGL."
 
-This version of Penumbra is a fork that is under somewhat more active development. 
+This version of Penumbra is a fork that is really just an attempt to
+get OpenGL working with clojure on my system. I've merged changes
+from https://github.com/mortuosplango/penumbra and 
+https://github.com/kephale/penumbra, which seem to be the closest thing
+to people who are putting any effort at all into maintaining this truly
+amazing project.
 
 Examples that aren't working:
 

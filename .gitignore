@@ -11,3 +11,6 @@ autodoc
 pom.xml
 META-INF
 lein
+.lein-repl-history
+*.so
+/target/*

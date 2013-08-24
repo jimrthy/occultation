@@ -11,7 +11,29 @@ https://github.com/kephale/penumbra, which seem to be the closest thing
 to people who are putting any effort at all into maintaining this truly
 amazing project.
 
-Examples that aren't working:
+Bare-bones example (I'm at least halfway reverse-engineering at this
+point, so bear with me on this):
+
+lein deps
+lein repl
+> (require '[penumbra.example.opengl.gears :as gears])
+nil
+> (gears/start)
+
+-> Should get a sample window drawing a rotating gear. Pressing the ESC
+key while the window's focused will cause it to exit. I get a long
+java stack trace from a NullPointerException that happens.
+
+At this point, we can probably all profit by reading ztellman's
+original documentation and source code. I really only created this
+fork so I'd have something to play with while I'm working my way
+through that, and the native dependencies just were not working.
+
+(I'm thankful that kephale seems to have actually taken care of
+that problem for me).
+
+
+Examples that aren't working (according to mortuosplango):
 
 - test/example/app/async.clj
 - test/example/app/switch.clj

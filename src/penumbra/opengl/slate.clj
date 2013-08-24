@@ -10,7 +10,6 @@
   (:use [penumbra.utils :only [defmacro- defn-memo]]
         [clojure.pprint]
         [penumbra.utils :only [separate]]
-        [clojure.core.incubator :only [-?>]]
         [penumbra.opengl core]
         [penumbra.app core])
   (:import [org.lwjgl.opengl Pbuffer PixelFormat]))
@@ -33,7 +32,7 @@
   ([]
      (create nil))
   ([parent]
-     (let [drawable (when-let [drawable-fn (-?> *app* :window :drawable)]
+     (let [drawable (when-let [drawable-fn (some-> *app* :window :drawable)]
                       (drawable-fn))
            pixel-buffer (Pbuffer. 1 1 (-> (PixelFormat.)) drawable)]
        (struct-map slate-struct

@@ -12,10 +12,8 @@
         [penumbra.translate core operators]
         [penumbra.glsl core]
         [penumbra.opengl.context :only (draw-frame-buffer)]
-        [clojure.contrib
-         (seq :only (separate indexed))
-         (def :only (defvar- defn-memo))
-         (pprint :only (pprint))])
+	[clojure.pprint :only (pprint)]
+	[penumbra.utils :only (separate indexed defvar- defn-memo)])
   (:require [clojure.zip :as zip]
             [penumbra.translate.c :as c]
             [penumbra.opengl.texture :as tex]
@@ -210,9 +208,9 @@
   [x]
   (list
    '(do
-      (declare (varying #^:float2 -coord))
-      (declare (uniform #^:float2 -dim))
-      (declare (uniform #^:float2 -bounds)))
+      (declare (varying (with-meta -coord {:tag :float2})))
+      (declare (uniform (with-meta -dim {:tag :float2})))
+      (declare (uniform (with-meta -bounds {:tag :float2}))))
    (-> (list 'defn 'void 'main [] (-> x prepend-index)) prepend-lighting)))             
 
 (defn- create-operator

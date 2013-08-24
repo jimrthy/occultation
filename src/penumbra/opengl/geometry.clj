@@ -8,7 +8,7 @@
 
 (ns ^{:skip-wiki true}
   penumbra.opengl.geometry
-  (:use [clojure.contrib.def :only (defmacro- defvar)]
+  (:use [penumbra.utils :only (defmacro-)]
         [cantor]
         [penumbra.opengl.core])
   (:require [penumbra.opengl.effects :as fx])
@@ -176,13 +176,15 @@
 
 ;;;
 
-(defvar *outer-renderer* nil)
+(def ^:dynamic *outer-renderer* nil)
 
-(defvar *intra-primitive-transform* false
-  "Have we encountered an intra-primitive (i.e. *inside-begin-end* is true) transformation")
+(def ^:dynamic *intra-primitive-transform* 
+  "Have we encountered an intra-primitive (i.e. *inside-begin-end* is true) transformation"
+  false)
 
-(defvar *transform-matrix* nil
-  "The transform matrix for intra-primtive transforms")
+(def ^:dynamic *transform-matrix* 
+  "The transform matrix for intra-primtive transforms"
+  nil)
 
 (def intra-primitive-renderer
   (reify

@@ -8,8 +8,8 @@
 
 (ns penumbra.translate.c
   (:use [penumbra.translate core]
-        [clojure.contrib
-         (def :only (defmacro-))]))
+        [penumbra.utils :only (defmacro-)]))
+         
   
 ;;;;;;;;;;;;;;;;;;;
 
@@ -158,7 +158,7 @@
    (not (seq? x))
    (-> x first seq?)))
 
-(def *line-terminator* ";")
+(def ^:dynamic *line-terminator* ";")
 
 (defmethod parser nil
   ;handle base cases
@@ -200,7 +200,7 @@
   `(defmethod parser ~op-symbol [x#]
      (str ~op-string (parse (second x#)))))
 
-(def *assignment* false)
+(def ^:dynamic *assignment* false)
 
 (defmacro- def-assignment-parser
   "Defines an assignment operator, making use of parse-assignment for the l-value

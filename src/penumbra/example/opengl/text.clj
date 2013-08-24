@@ -6,25 +6,14 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns penumbra.app.core
-  (:use [penumbra.utils :only [defvar]]))
+(ns penumbra.example.opengl.text
+  (:use [penumbra opengl])
+  (:require [penumbra [app :as app] [text :as text]]))
 
-(def ^:dynamic *app* 
-  "Current application."
-  nil)
+(defn display [_ _]
+  (text/with-font (text/font "Inconsolata" :size 50)
+    (text/write-to-screen "hello world" 0 0)
+    (text/write-to-screen "hello world" 0 100)))
 
-(def ^:dynamic *hz* 
-  "Refresh rate of update-loop"
-  nil)
-
-;;;
-
-(defprotocol App
-  (init! [app])
-  (destroy! [app])
-  (speed! [app speed])
-  (now [app]))
-
-(defmacro with-app [app & body]
-  `(binding [*app* ~app]
-     ~@body))
+(defn start []
+  (app/start {:display display} {}))

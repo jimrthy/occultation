@@ -7,8 +7,8 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.translate.core
-  (:use [clojure.contrib.pprint])
-  (:use [clojure.contrib.def :only (defmacro- defvar defvar-)])
+  (:use [clojure.pprint])
+  (:use [penumbra.utils :only (defmacro- defvar defvar-)])
   (:use [clojure.walk])
   (:import (java.text ParseException))
   (:import (java.io StringWriter))
@@ -16,21 +16,29 @@
 
 ;;;
 
-(defvar *elements* nil)
+(def ^:dynamic *elements* nil)
 
-(defvar *preprocessor* nil
-  "Initial processing step")
-(defvar *generator* nil
+(def ^:dynamic *preprocessor* 
+  "Initial processing step"
+  nil)
+
+(def ^:dynamic *generator* 
   "Anything returned by this is prepended to the beginning of the expression.
-  Currently only used for imports, could also be used for anonymous functions.")
-(defvar *parser* nil
-  "Returns a string in the native language for the given s-expression.")
-(defvar *transformer* nil
-  "Macros, applied from leaf to root across entire expression.")
-(defvar *inspector* nil
-  "Returns the type of the expression.  Applied as :tag metadata.")
-(defvar *tagger* nil
-  "Specialized macro.  Should set :assignment and :defines tags.")
+  Currently only used for imports, could also be used for anonymous functions."
+  nil)
+
+(def ^:dynamic *parser* 
+  "Returns a string in the native language for the given s-expression."
+  nil)
+(def ^:dynamic *transformer*
+  "Macros, applied from leaf to root across entire expression."
+  nil)
+(def ^:dynamic *inspector* 
+  "Returns the type of the expression.  Applied as :tag metadata."
+  nil)
+(def ^:dynamic *tagger* 
+  "Specialized macro.  Should set :assignment and :defines tags."
+  nil)
 
 ;;;
 
@@ -120,8 +128,9 @@
 
 ;;;
 
-(defvar *translate-exception* nil
-  "First exception encountered while translating.")
+(def ^:dynamic *translate-exception*
+  "First exception encountered while translating."
+  nil)
 
 (defmacro- defn-try [name f message]
   `(defn ~name [x#]
@@ -200,8 +209,8 @@
 (defn- let? [x]
   (:let (meta x)))
 
-(defvar- *vars* nil)
-(defvar- *let* false)
+(def ^:dynamic *vars* nil)
+(def ^:dynamic *let* false)
 
 (defn scope-map [f x]
   (binding [*vars* (if (scope? x) (atom @*vars*) *vars*)

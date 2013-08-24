@@ -6,9 +6,9 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns example.game.pong
+(ns penumbra.example.game.pong
   (:use [penumbra opengl]
-        [clojure.contrib.def])
+        [penumbra.utils])
   (:require [penumbra [app :as app] [text :as text]]))
 
 (def ball-width 0.03)

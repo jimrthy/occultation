@@ -5,9 +5,9 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns example.opengl.squares
+(ns penumbra.example.opengl.squares
   (:use [penumbra opengl compute]
-        [clojure.contrib.seq :only (flatten)])
+        [penumbra.utils :only (flatten)])
   (:require [penumbra.app :as app]
             [penumbra.data :as data]))
 

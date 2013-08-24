@@ -8,7 +8,7 @@
 
 (ns penumbra.app.window
   (:use [penumbra.opengl]
-        [clojure.contrib.core :only (-?>)])
+        [penumbra.utils :only (-?>)])
   (:require [penumbra.opengl
               [texture :as texture]
               [context :as context]]
@@ -79,7 +79,8 @@
                         (let [[w h] (size this)]
                           (ref-set window-size [w h])
                           (viewport 0 0 w h)
-                          (event/publish! app :reshape [0 0 w h])))))
+                          ;(viewport 0 0 w h)
+                          (event/publish! app :reshape [(Display/getX) (Display/getY) w h])))))
      (init! [this]
             (when-not (Display/isCreated)
               (Display/setParent nil)
@@ -88,7 +89,8 @@
             (-> (InternalTextureLoader/get) .clear)
             (TextureImpl/bindNone)
             (let [[w h] (size this)]
-              (viewport 0 0 w h)))
+              (viewport (Display/getX) (Display/getY) w h)))
+              ;(viewport 0 0 w h)))
      (destroy! [_]
                (-> (InternalTextureLoader/get) .clear)
                (context/destroy)

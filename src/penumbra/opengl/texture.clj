@@ -7,8 +7,8 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.texture
-  (:use [clojure.contrib.def :only (defmacro- defn-memo)])
-  (:use [clojure.contrib.seq :only (separate)])
+  (:use [penumbra.utils :only (defmacro- defn-memo)])
+  (:use [penumbra.utils :only (separate)])
   (:use [penumbra.opengl core])
   (:use [penumbra data])
   (:import [org.lwjgl BufferUtils])
@@ -31,7 +31,6 @@
 (gl-import- glCopyTexSubImage2D gl-copy-tex-sub-image-2d)
 (gl-import- glCopyTexSubImage3D gl-copy-tex-sub-image-3d)
 (gl-import- glGetTexImage gl-get-tex-image)
-(gl-import- glTexParameteri gl-tex-parameter)
 (gl-import- glDeleteTextures gl-delete-textures)
 (gl-import- glTexCoord1d gl-tex-coord-1)
 (gl-import- glTexCoord2d gl-tex-coord-2)
@@ -39,7 +38,8 @@
 (gl-import- gluBuild2DMipmaps glu-build-2d-mipmaps)
 (gl-import- glDeleteTextures gl-delete-textures)
 (gl-import- glPixelStorei gl-pixel-store)
-(gl-import- glGetTexParameter gl-get-tex-parameter)
+(gl-import+ glTexParameteri gl-tex-parameter)
+(gl-import+ glGetTexParameter gl-get-tex-parameter)
 (gl-import glMatrixMode gl-matrix-mode)
 (gl-import glPushMatrix gl-push-matrix)
 (gl-import glPopMatrix gl-pop-matrix)
@@ -153,7 +153,7 @@
                      (byte-array (denormalize-bytes s)))))
 
 (defn- array-to-buffer [a type]
-  (println "type" type)
+  ;(println "type" type)
   (cond
    (= type :double)        (-> (BufferUtils/createDoubleBuffer (count a)) (.put a) .rewind)
    (= type :float)         (-> (BufferUtils/createFloatBuffer (count a)) (.put a) .rewind)

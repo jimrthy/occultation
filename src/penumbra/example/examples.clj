@@ -30,44 +30,44 @@
    [penumbra.example.gpgpu.fluid :as fluid]
    [penumbra.example.gpgpu.n-body :as nbody]))
 
-#_(deftest run
-    (testing "Async"
-      (async/start))
-    (testing "Switch"
-      (switch/start))
-    (testing "Nested"
-      (nested/start))
-    (testing "Text"
-      (text/start))
-    (testing "Gears"
-      (gears/start))
-    (testing "Sierpinski"
-      (sierpinski/start))
-    (testing "Render-to-Texture"
-      (rtt/start))
-    (testing "Marble"
-      (marble/start))
-    (testing "Shadow"
-      (shadow/start))
-    (testing "Squares"
-      (squares/start))
-    (testing "Accumulate"
-      (accumulate/start))
-    (testing "Async"
-      (gl-async/start))
-    (testing "Tetris"
-      (tetris/start))
-    (testing "Asteroids"
-      (asteroids/start))
-    (testing "Pong"
-      (pong/start))
-    (testing "Mandelbrot"
-      (mandelbrot/start))
-    (testing "Convolution"
-      (convolution/start))
-    (testing "Brian's Brains"
-      (brian/start))
-    (testing "Fluid"
-      (fluid/start))
-    (testing "N Body"
-      (nbody/start)))
+(deftest run
+  (testing "Async"
+    (async/start))
+  (testing "Switch"
+    (switch/start))
+  (testing "Nested"
+    (nested/start))
+  (testing "Text"
+    (text/start))
+  (testing "Gears"
+    (gears/start))
+  (testing "Sierpinski"
+    (sierpinski/start))
+  (testing "Render-to-Texture"
+    (rtt/start))
+  (testing "Marble"
+    (marble/start))
+  (testing "Shadow"
+    (shadow/start))
+  (testing "Squares"
+    (squares/start))
+  (testing "Accumulate"
+    (accumulate/start))
+  (testing "Async"
+    (gl-async/start))
+  (testing "Tetris"
+    (tetris/start))
+  (testing "Asteroids"
+    (asteroids/start))
+  (testing "Pong"
+    (pong/start))
+  (testing "Mandelbrot"
+    (mandelbrot/start))
+  (testing "Convolution"
+    (convolution/start))
+  (testing "Brian's Brains"
+    (brian/start))
+  (testing "Fluid"
+    (fluid/start))
+  (testing "N Body"
+    (nbody/start)))

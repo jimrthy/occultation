@@ -148,7 +148,9 @@
 ;;;
 
 (defn app
-  "Returns the current application."
+  "Returns the current application.
+Seems wrong that there can be only one...then again, that's pretty much the way
+lwjgl is written. For now."
   []
   app/*app*)
 
@@ -282,19 +284,19 @@
 
 (defn start-single-thread
   [app loop-fn]
-  (context/with-context nil
-    (loop-fn
-     app
-     (fn [inner-fn]
-       (doto app
-         (app/speed! 0)
-         app/init!
-         (app/speed! 1))
-       (inner-fn)
-       (app/speed! app 0))
-     (partial single-thread-main-loop app))
-    (when (controller/stopped? app)
-      (app/destroy! app)))
+  (.start (Thread. (context/with-context nil
+                     (loop-fn
+                      app
+                      (fn [inner-fn]
+                        (doto app
+                          (app/speed! 0)
+                          app/init!
+                          (app/speed! 1))
+                        (inner-fn)
+                        (app/speed! app 0))
+                      (partial single-thread-main-loop app))
+                     (when (controller/stopped? app)
+                       (app/destroy! app)))))
   app)
 
 (defn start

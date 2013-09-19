@@ -46,16 +46,33 @@
   (rotate (:rot state) 0 1 0)
   (call-display-list (:cube state)))
 
-(defn start []
+(defn start
+  "This doesn't seem to work.
+Closing the generated window leads to the messages.
+After Pause 1, it closes.
+IOW...this very much does not seem to be happening in a different thread."
+  []
   (let [app (app/start {:init init, :reshape reshape, :display display} {:rot 0})]
+    (println "Starting")
+    (flush)
     (Thread/sleep 5000)
+    (println "Pause 1")
+    (flush)
     (app/pause! app)
     (Thread/sleep 1000)
+    (println "Resume")
+    (flush)
     (app/start app)
     (Thread/sleep 2000)
+    (println "Stopping")
+    (flush)
     (app/stop! app)
     (Thread/sleep 1000)
+    (println "Restarting")
+    (flush)
     (app/start app)
     (Thread/sleep 1000)
+    (println "Exiting")
+    (flush)
     (app/stop! app)))
 

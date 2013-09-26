@@ -136,7 +136,11 @@
         state (atom state)
         controller (controller/create)
         app (App. state clock event queue window input controller app/*app*)]
-    (reset! window (window/create-fixed-window app))
+    (let [top (get state :top 0)
+          left (get state :left 0)
+          width (get state :width 800)
+          height (get state :height 600)]
+      (reset! window (window/create-fixed-window app left top width height)))
     (reset! input (input/create app))
     (reset! queue (queue/create app))
     (doseq [[event f] (alter-callbacks clock callbacks)]

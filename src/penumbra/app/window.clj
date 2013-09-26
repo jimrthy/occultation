@@ -33,7 +33,10 @@
   (process! [w] "Processes all messages from the operating system.")
   (update! [w] "Swaps the buffers.")
   (handle-resize! [w] "Handles any resize events.  If there wasn't a resizing, this is a no-op.")
-  (init! [w] "Initializes the window.")
+  (init! [w]
+    [wnd w h]
+    [wnd x y w h]
+    "Initializes the window.")
   (destroy! [w] "Destroys the window.")
   (vsync! [w flag] "Toggles vertical sync.")
   (fullscreen! [w flag] "Toggles fullscreen mode."))
@@ -46,52 +49,62 @@
    :fullscreen (.isFullscreenCapable m)
    :mode m})
 
-(defn create-fixed-window [app]
-  (let [window-size (ref [0 0])]
-    (reify
-      Window
-      (vsync! [_ flag] (Display/setVSyncEnabled flag))
-      (fullscreen! [_ flag] (Display/setFullscreen flag))
-      (title! [_ title] (Display/setTitle title))
-      (display-modes [_] (map transform-display-mode (Display/getAvailableDisplayModes)))
-      (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
-      (display-mode! [_ mode] (Display/setDisplayMode (:mode mode)))
-      (display-mode! [this w h]
-        (let [max-bpp (apply max (map :bpp (display-modes this)))]
-          (->> (display-modes this)
-               (filter #(= max-bpp (:bpp %)))
-               (sort-by #(Math/abs (apply * (map - [w h] (:resolution %)))))
-               first
-               (display-mode! this))))
-      (size [this] (:resolution (display-mode this)))
-      (resized? [this] (not= @window-size (size this)))
-      (invalidated? [_] (Display/isDirty))
-      (close? [_] (try
-                    (Display/isCloseRequested)
-                    (catch Exception e
-                      true)))
-      (update! [_] (Display/update))
-      (process! [_] (Display/processMessages))
-      (handle-resize! [this]
-        (dosync
-         (when (resized? this)
+(defn create-fixed-window 
+  ([app] create-fixed-window app 800 600)
+  ([app w h]
+     (create-fixed-window 0 0 w h))
+  ([app x y w h]
+     (let [window-size (ref [w h])]
+       (reify
+         Window
+         (vsync! [_ flag] (Display/setVSyncEnabled flag))
+         (fullscreen! [_ flag] (Display/setFullscreen flag))
+         (title! [_ title] (Display/setTitle title))
+         (display-modes [_] (map transform-display-mode (Display/getAvailableDisplayModes)))
+         (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
+         (display-mode! [_ mode] (Display/setDisplayMode (:mode mode)))
+         (display-mode! [this w h]
+           (let [max-bpp (apply max (map :bpp (display-modes this)))]
+             (->> (display-modes this)
+                  (filter #(= max-bpp (:bpp %)))
+                  (sort-by #(Math/abs (apply * (map - [w h] (:resolution %)))))
+                  first
+                  (display-mode! this))))
+         (size [this] (:resolution (display-mode this)))
+         (resized? [this] (not= @window-size (size this)))
+         (invalidated? [_] (Display/isDirty))
+         (close? [_] (try
+                       (Display/isCloseRequested)
+                       (catch Exception e
+                         true)))
+         (update! [_] (Display/update))
+         (process! [_] (Display/processMessages))
+         (handle-resize! [this]
+           (dosync
+            (when (resized? this)
+              (let [[w h] (size this)]
+                (ref-set window-size [w h])
+                (viewport 0 0 w h)
+                (event/publish! app :reshape [0 0 w h])))))
+         (init! [this x y w h]
+           (when-not (Display/isCreated)
+             (Display/setParent nil)
+             (Display/create (PixelFormat.))
+             ;; FIXME: Move to (x, y)
+             (display-mode! this w h))
+           (-> (InternalTextureLoader/get) .clear)
+           (TextureImpl/bindNone)
            (let [[w h] (size this)]
-             (ref-set window-size [w h])
-             (viewport 0 0 w h)
-             (event/publish! app :reshape [0 0 w h])))))
-      (init! [this]
-        (when-not (Display/isCreated)
-          (Display/setParent nil)
-          (Display/create (PixelFormat.))
-          (display-mode! this 800 600))
-        (-> (InternalTextureLoader/get) .clear)
-        (TextureImpl/bindNone)
-        (let [[w h] (size this)]
-          (viewport 0 0 w h)))
-      (destroy! [_]
-        (-> (InternalTextureLoader/get) .clear)
-        (context/destroy)
-        (Display/destroy)))))
+             (viewport 0 0 w h)))
+         (init! [this w h]
+           ;; FIXME: Honestly, this should be centered, or something.
+           (init! this 0 0 w h))
+         (init! [this]
+           (init! this 800 600))
+         (destroy! [_]
+           (-> (InternalTextureLoader/get) .clear)
+           (context/destroy)
+           (Display/destroy))))))
 
 (defmacro with-window [window & body]
   `(context/with-context nil

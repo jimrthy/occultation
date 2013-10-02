@@ -128,33 +128,40 @@
 (defn create
   "Creates an application."
   [callbacks state]
-  (let [window (atom nil)
-        input (atom nil)
-        queue (atom nil)
-        event (event/create)
-        clock (time/clock)
-        state (atom state)
-        controller (controller/create)
-        app (App. state clock event queue window input controller app/*app*)]
-    (let [top (get state :top 0)
-          left (get state :left 0)
-          width (get state :width 800)
-          height (get state :height 600)]
-      (reset! window (window/create-fixed-window app left top width height)))
-    (reset! input (input/create app))
-    (reset! queue (queue/create app))
-    (doseq [[event f] (alter-callbacks clock callbacks)]
-      (if (= event :display)
-        (event/subscribe! app :display (fn [& args] (f @state)))
-        (event/subscribe! app event (fn [& args] (update- app state f args)))))
-    app))
+  (if (instance? App callbacks)
+    callbacks
+    (do
+      (println "Creating an application")
+      (let [window (atom nil)
+            input (atom nil)
+            queue (atom nil)
+            event (event/create)
+            clock (time/clock)
+            state (atom state)
+            controller (controller/create)
+            app (App. state clock event queue window input controller app/*app*)]
+        (let [top (get state :top 0)
+              left (get state :left 0)
+              width (get state :width 800)
+              height (get state :height 600)]
+          (println "Creating a window @ " left top width height)
+          ;; left and top seem to be getting ignored. It seems likely that's a
+          ;; window manager thing.
+          (reset! window (window/create-fixed-window app left top width height)))
+        (reset! input (input/create app))
+        (reset! queue (queue/create app))
+        (doseq [[event f] (alter-callbacks clock callbacks)]
+          (println "Adding a callback for " event)
+          (if (= event :display)
+            (event/subscribe! app :display (fn [& args] (f @state)))
+            (event/subscribe! app event (fn [& args] (update- app state f args)))))
+        (println "App created")
+        app))))
 
 ;;;
 
 (defn app
-  "Returns the current application.
-Seems wrong that there can be only one...then again, that's pretty much the way
-lwjgl is written. For now."
+  "Returns the current application."
   []
   app/*app*)
 

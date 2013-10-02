@@ -38,6 +38,7 @@
 (defn write-to-screen
   "Draws string at pixel coordinates (x, y)"
   [string x y]
+  (comment (println "Printing '" string "' at (" x ", " y ")"))
   (with-font (or *font* (font "Tahoma" :size 20))
     (try-with-program nil
       (with-disabled [:texture-rectangle :lighting]

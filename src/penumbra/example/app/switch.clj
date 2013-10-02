@@ -70,10 +70,6 @@
 
 ;;
 
-(comment (def apps {:controller (app/create {:init controller-init :display controller-draw} {})
-                    :first (app/create {:init first-init, :key-press first-key-press, :display first-display} {})
-                    :second (app/create {:init second-init, :key-press second-key-press :display second-display} {})}))
-
 (defn start []
   (println "Begin")
   (let [first (app/create {:init first-init, :key-press first-key-press, :display first-display} {})

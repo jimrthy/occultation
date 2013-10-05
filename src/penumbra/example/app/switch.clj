@@ -13,8 +13,6 @@
   (:use [penumbra opengl text])
   (:require [penumbra.app :as app]))
 
-(comment (declare apps))
-
 (defn switch [a apps]
   (println "switch " a)
   (loop [app (apps a)]
@@ -44,13 +42,19 @@
 (defn first-key-press [key state]
   (println "1: " key)
   (when (= key :escape)
-    (app/stop!)
+    ;; Actually stopping the app seems like a mistake.
+    (comment
+      ;; Getting rid of this at least keeps the app from crashing.
+      ;; It also eliminates the switch. I wonder what was planned for this.
+      (do
+        (println "Stopping current app")
+        (app/stop!)))
+    (println "Ordering change to to second window")
     (assoc state :goto :second)))
 
 (defn first-display [_ state]
-  (comment (println "Display First"))
   (write-to-screen "first app" 0 0)
-  (app/repaint!))
+  (comment (app/repaint!)))
 
 ;; Second app
 
@@ -64,7 +68,7 @@
     (assoc state :goto :first)))
 
 (defn second-display [_ state]
-  (comment (println "Display second"))
+  (comment) (println "Display second")
   (write-to-screen "second app" 0 0)
   (app/repaint!))
 

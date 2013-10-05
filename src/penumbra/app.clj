@@ -180,7 +180,7 @@
     arglists)))
 
 (defmacro- auto-import
-  "Creates an function which automatically fills in app with *app*"
+  "Creates a function which automatically fills in app with *app*"
   [protocol & imports]
   (let [protocol (eval protocol)
         sigs (eval `(vals (:sigs ~protocol)))]
@@ -295,17 +295,27 @@
 
 (defn start-single-thread
   [app loop-fn]
+  ;; FIXME: Is there a reason to do this in a Thread instead
+  ;; a future? Except, of course, that the semantics of a future
+  ;; have all the wrong implications.
+  ;; Don't want to double-guess ztellman, but...at the very least,
+  ;; it seems like this should be kicked off using an executor.
   (.start (Thread. (context/with-context nil
-                     (loop-fn
-                      app
-                      (fn [inner-fn]
-                        (doto app
-                          (app/speed! 0)
-                          app/init!
-                          (app/speed! 1))
-                        (inner-fn)
-                        (app/speed! app 0))
-                      (partial single-thread-main-loop app))
+                     (try
+                       (loop-fn
+                        app
+                        (fn [inner-fn]
+                          (doto app
+                            (app/speed! 0)
+                            app/init!
+                            (app/speed! 1))
+                          (inner-fn)
+                          (app/speed! app 0))
+                        (partial single-thread-main-loop app))
+                       (catch Exception ex
+                         ;; TODO: More error-handling info!
+                         (println "Unhandled exception from the drawing loop:\n" ex)))
+                     (println "Cleaning up after main loop. app:" app)
                      (when (controller/stopped? app)
                        (app/destroy! app)))))
   app)

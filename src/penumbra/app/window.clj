@@ -64,8 +64,9 @@
          (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
          (display-mode! [_ mode] (Display/setDisplayMode (:mode mode)))
          (display-mode! [this w h]
-           (let [max-bpp (apply max (map :bpp (display-modes this)))]
-             (->> (display-modes this)
+           (let [modes (display-modes this)
+                 max-bpp (apply max (map :bpp modes))]
+             (->> modes
                   (filter #(= max-bpp (:bpp %)))
                   (sort-by #(Math/abs (apply * (map - [w h] (:resolution %)))))
                   first
@@ -96,11 +97,11 @@
            (TextureImpl/bindNone)
            (let [[w h] (size this)]
              (viewport 0 0 w h)))
+         (init! [this]
+           (init! this 800 600))
          (init! [this w h]
            ;; FIXME: Honestly, this should be centered, or something.
            (init! this 0 0 w h))
-         (init! [this]
-           (init! this 800 600))
          (destroy! [_]
            (-> (InternalTextureLoader/get) .clear)
            (context/destroy)

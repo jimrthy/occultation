@@ -23,6 +23,12 @@
   (destroy! [app])
   (speed! [app speed])
   (now [app]))
+;; Should probably just break down and do something like
+(comment (.addMethod pprint/simple-dispatch App pprint-App))
+;; But that involves knowing about pprint in here (which
+;; seems pretty reasonable) and implementing the pretty
+;; print function (which I'd rather not get into just now,
+;; though it's probably purty simple)
 
 (defmacro with-app [app & body]
   `(binding [*app* ~app]

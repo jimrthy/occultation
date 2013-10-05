@@ -11,13 +11,24 @@
 
 (ns penumbra.example.app.switch
   (:use [penumbra opengl text])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app :as app]
+            [clojure.pprint :refer [pprint]]))
 
 (defn switch [a apps]
-  (println "switch " a)
-  (loop [app (apps a)]
-    (when app
-      (recur (-> app app/start deref :goto apps)))))
+  (println "Switching to " a)
+  (try
+    (pprint apps)
+    (catch Exception ex
+      (println "Pretty-printing apps failed:\n" ex)
+      ;; TODO: Start here with this.
+      (println "Apparently I need to pick a priority for printing an App.")))
+  (try
+    (loop [app (apps a)]
+      (when app
+        (recur (-> app app/start deref :goto apps))))
+    (catch Exception ex
+      (println "Unhandled exception in switch:")
+      (pprint ex))))
 
 ;; Controller
 
@@ -25,13 +36,16 @@
   (println "Initializing controller")
   (switch :first state))
 
-(defn controller-draw [_]
+(defn controller-draw [state]
   (println "Drawing controller")
   (translate 0 -0.93 -3)
   (draw-triangles
    (color 1 0 0) (vertex 1 0)
    (color 0 1 0) (vertex -1 0)
    (color 0 0 1) (vertex 0 1.86))
+  ;; Not that we ever get to here.
+  (when-let [next (:goto state)]
+    (switch next state))
   (app/repaint!))
 
 ;; First app

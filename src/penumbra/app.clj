@@ -11,7 +11,8 @@
         [penumbra.opengl]
         [penumbra.opengl.core]
         [clojure.walk :only (postwalk-replace)])
-  (:require [penumbra.opengl
+  (:require [clojure.pprint :refer [pprint]]
+            [penumbra.opengl
              [context :as context]
              [slate :as slate]]
             [penumbra
@@ -131,7 +132,7 @@
   (if (instance? App callbacks)
     callbacks
     (do
-      (println "Creating an application")
+      (comment (println "Creating an application"))
       (let [window (atom nil)
             input (atom nil)
             queue (atom nil)
@@ -151,7 +152,7 @@
         (reset! input (input/create app))
         (reset! queue (queue/create app))
         (doseq [[event f] (alter-callbacks clock callbacks)]
-          (println "Adding a callback for " event)
+          (comment (println "Adding a callback for " event))
           (if (= event :display)
             (event/subscribe! app :display (fn [& args] (f @state)))
             (event/subscribe! app event (fn [& args] (update- app state f args)))))
@@ -294,13 +295,20 @@
        (controller/stop! app :requested-by-user))))
 
 (defn start-single-thread
+  "This is being called from start. With an App instance and penumbra.app.loop/basic-loop"
   [app loop-fn]
   ;; FIXME: Is there a reason to do this in a Thread instead
   ;; a future? Except, of course, that the semantics of a future
   ;; have all the wrong implications.
   ;; Don't want to double-guess ztellman, but...at the very least,
   ;; it seems like this should be kicked off using an executor.
+  (println "Kicking off a single thread")
   (.start (Thread. (context/with-context nil
+                     (println "Entering a window loop in a background thread")
+                     ;; Multiple method clash.
+                     ;; app is both an IPersistentMap and an IDeref.
+                     (comment (pprint app))
+                     (println app)
                      (try
                        (loop-fn
                         app
@@ -311,6 +319,9 @@
                             (app/speed! 1))
                           (inner-fn)
                           (app/speed! app 0))
+                        ;; Q: Why is this a partial?
+                        ;; A: It's being called in penumbra.app.loop/basic-loop with
+                        ;; no args.
                         (partial single-thread-main-loop app))
                        (catch Exception ex
                          ;; TODO: More error-handling info!

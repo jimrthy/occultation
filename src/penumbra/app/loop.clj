@@ -72,12 +72,15 @@
            (try
              (inner-fn)
              (catch Exception e
+               (println "Unhandled exception from the inner loop")
                (.printStackTrace e)
                (controller/stop! app :exception)))
            (when-not (or (controller/paused? app) (controller/stopped? app))
              (recur)))))
       (catch Exception e
+        (println "Unhandled exception from the outer loop:\n" (class e))
         (.printStackTrace e)
         (controller/stop! app :exception))
       (finally
-        ))))
+        ;; Not that anything is actually happening
+        (println "Cleaning up the/a messaging loop")))))

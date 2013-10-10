@@ -1,0 +1,4 @@
+#! /bin/sh
+
+lein localrepo install target/penumbra-0.6.5-SNAPSHOT.jar /jimrthy/penumbra 0.6.5-SNAPSHOT
+

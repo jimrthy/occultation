@@ -148,7 +148,11 @@
           (println "Creating a window @ " left top width height)
           ;; left and top seem to be getting ignored. It seems likely that's a
           ;; window manager thing.
-          (reset! window (window/create-fixed-window app left top width height)))
+          (reset! window (window/create-fixed-window app left top width height))
+          ;; FIXME: This absolutely does not belong in here...
+          ;; unless I want to add it as an initialization option
+          ;; (which, honestly, is probably the best way to include it)
+          (window/resizable! @window true))        
         (reset! input (input/create app))
         (reset! queue (queue/create app))
         (doseq [[event f] (alter-callbacks clock callbacks)]

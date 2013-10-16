@@ -27,6 +27,7 @@
   (display-mode! [window w h] [w mode] "Sets the display mode.")
   (title! [w title] "Sets the title of the application.")
   (size [w] "Returns the current size of the application.")
+  (resizable! [w flag] "Sets whether the window is resizable or not")
   (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
   (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
   (close? [w] "Returns true if the user has requested it be closed.")
@@ -72,6 +73,9 @@
                   first
                   (display-mode! this))))
          (size [this] (:resolution (display-mode this)))
+         (resizable! [_ flag]
+           ;; FIXME: Doesn't actually belong in here
+           (Display/setResizable flag))
          (resized? [this] (not= @window-size (size this)))
          (invalidated? [_] (Display/isDirty))
          (close? [_] (try

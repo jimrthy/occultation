@@ -129,26 +129,34 @@
 (defn create
   "Creates an application."
   [callbacks state]
+  ;; I'm guessing that this next check allows nested idempotent creation
   (if (instance? App callbacks)
     callbacks
     (do
-      (comment (println "Creating an application"))
+      (comment (println "Creating a new application"))
       (let [window (atom nil)
             input (atom nil)
             queue (atom nil)
             event (event/create)
             clock (time/clock)
-            state (atom state)
+            ;; Q: Why would you do this?
+            ;; Am I missing something basic?
+            ;; A: Verdict seems to be "yes." Not
+            ;; doing it causes a ClassCastException because I'm trying
+            ;; to cast a Map to an Atom.
+            ;;state (atom state)
             controller (controller/create)
             app (App. state clock event queue window input controller app/*app*)]
         (let [top (get state :top 0)
               left (get state :left 0)
               width (get state :width 800)
-              height (get state :height 600)]
-          (println "Creating a window @ " left top width height)
+              height (get state :height 600)
+              resizable (get state :fluid false)]
+          (println "Creating a window @ " left top width height resizable)
+          (println "State: " state)
           ;; left and top seem to be getting ignored. It seems likely that's a
           ;; window manager thing.
-          (reset! window (window/create-fixed-window app left top width height)))
+          (reset! window (window/create-window app left top width height resizable)))
         (reset! input (input/create app))
         (reset! queue (queue/create app))
         (doseq [[event f] (alter-callbacks clock callbacks)]

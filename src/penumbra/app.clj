@@ -167,8 +167,6 @@
         (println "App created")
         app))))
 
-;;;
-
 (defn app
   "Returns the current application."
   []

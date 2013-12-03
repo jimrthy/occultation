@@ -27,6 +27,7 @@
   (display-mode! [window w h] [w mode] "Sets the display mode.")
   (title! [w title] "Sets the title of the application.")
   (size [w] "Returns the current size of the application.")
+  (resizable! [w flag] "Sets whether the window is resizable or not")
   (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
   (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
   (close? [w] "Returns true if the user has requested it be closed.")
@@ -129,7 +130,7 @@ create-resizable-window is almost exactly the same."
   ([app w h]
      (create-resizable-window app 0 0 w h))
   ([app x y w h]
-     (create-window app x y w h true))  )
+     (create-window app x y w h true)))
 
 (defmacro with-window [window & body]
   `(context/with-context nil

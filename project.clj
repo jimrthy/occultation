@@ -14,8 +14,8 @@
                  ;; example of what he was talking about?
                  [kephale/lwjgl-natives "2.9.0"]
                  [slingshot "0.10.3"]]
-  :profiles {:dev {:depenencies [[night-vision "0.1.0-SNAPSHOT"]]
-                   :injections [(require 'night-vision.goggles)
-                                (require 'clojure.pprint)]}}
+  :profiles {:dev {:dependencies [[night-vision "0.1.0-SNAPSHOT"]]
+             :injections [(require 'night-vision.goggles)
+                          (require 'clojure.pprint)]}}
   :java-source-paths ["java"]
   :checksum-deps false)

@@ -64,8 +64,12 @@
 ;;;
 
 (defn- update-
-  "Updates the state of the application."
+  "Updates the state of the application.
+Q: Is this name one of my typos?"
   [app state f args]
+  ;; TODO: Still need to remember to pprint App.
+  ;; state here *must* be an Atom.
+  (comment (println "Running update on app: " app "\nState: " state "\nfn: " f "\nArgs: " args))
   (swap! state
          (fn [state]
            (if-let [state* (if (empty? args)
@@ -144,9 +148,9 @@
             ;; A: Verdict seems to be "yes." Not
             ;; doing it causes a ClassCastException because I'm trying
             ;; to cast a Map to an Atom.
-            ;;state (atom state)
+            state-atom (atom state)
             controller (controller/create)
-            app (App. state clock event queue window input controller app/*app*)]
+            app (App. state-atom clock event queue window input controller app/*app*)]
         (let [top (get state :top 0)
               left (get state :left 0)
               width (get state :width 800)
@@ -162,8 +166,8 @@
         (doseq [[event f] (alter-callbacks clock callbacks)]
           (comment (println "Adding a callback for " event))
           (if (= event :display)
-            (event/subscribe! app :display (fn [& args] (f @state)))
-            (event/subscribe! app event (fn [& args] (update- app state f args)))))
+            (event/subscribe! app :display (fn [& args] (f @state-atom)))
+            (event/subscribe! app event (fn [& args] (update- app state-atom f args)))))
         (println "App created")
         app))))
 

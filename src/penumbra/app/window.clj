@@ -27,7 +27,8 @@
   (display-mode! [window w h] [w mode] "Sets the display mode.")
   (title! [w title] "Sets the title of the application.")
   (size [w] "Returns the current size of the application.")
-  (resizable! [w flag] "Sets whether the window is resizable or not")
+  (position [w] "Returns the current location of the application.")
+  (resizable! [w flag] "Sets whether the window is resizable or not.")
   (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
   (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
   (close? [w] "Returns true if the user has requested it be closed.")
@@ -57,7 +58,7 @@
      (create-window 0 0 w h resizable))
   ([app x y w h resizable]
       (let [window-size (ref [w h])
-            position (ref [x y])]
+            window-position (ref [x y])]
         (reify
           Window
           (vsync! [_ flag] (Display/setVSyncEnabled flag))
@@ -74,8 +75,16 @@
                    (sort-by #(Math/abs (apply * (map - [w h] (:resolution %)))))
                    first
                    (display-mode! this))))
-          (size [this] (:resolution (display-mode this)))
-          (resized? [this] (not= @window-size (size this)))
+          (size [this]
+            (let [w (Display/getWidth)
+                  h (Display/getHeight)]
+              [w h]))
+          (position [this]
+            (let [x (Display/getX)
+                  y  (Display/getY)]
+              [x y]))
+          (resized? [this]
+            (Display/wasResized))
           (invalidated? [_] (Display/isDirty))
           (close? [_] (try
                         (Display/isCloseRequested)
@@ -84,13 +93,17 @@
           (update! [_] (Display/update))
           (process! [_] (Display/processMessages))
           (handle-resize! [this]
-            (comment (print "Resize event"))
             (dosync
-             (when (resized? this)
-               (let [[w h] (size this)]
+             ;; This winds up calling :reshape, which seems as though
+             ;; it really should take the window position into account.
+             ;; Then again, I'm not sure why anyone would care.
+             (when (resized? this)               
+               (let [[w h] (size this)
+                     [x y] (position this)]
                  (ref-set window-size [w h])
                  (viewport 0 0 w h)
-                 (event/publish! app :reshape [0 0 w h])))))
+                 ;; Q: Should this care about position?
+                 (event/publish! app :reshape [x y w h])))))
           (init! [this x y w h]
             (when-not (Display/isCreated)
               (Display/setResizable resizable)
@@ -100,7 +113,9 @@
               (Display/setParent nil)
               (Display/create (PixelFormat.))
               ;; FIXME: Move to (x, y).
-              ;; Unless full screen.
+              ;; Unless full screen. Which isn't actually
+              ;; implemented in any way, shape, or form yet.
+              (Display/setLocation x y)
               (display-mode! this w h))
             (-> (InternalTextureLoader/get) .clear)
             (TextureImpl/bindNone)
@@ -119,9 +134,9 @@
 (defn create-fixed-window 
   "One of the truly obnoxious pieces of this puzzle is that
 create-resizable-window is almost exactly the same."
-  ([app] create-window app 800 600 false)
+  ([app] create-fixed-window app 800 600)
   ([app w h]
-     (create-window app 0 0 w h false))
+     (create-fixed-window app 0 0 w h))
   ([app x y w h]
      (create-window app x y w h false)))
 

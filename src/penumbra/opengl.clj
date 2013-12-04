@@ -148,6 +148,8 @@
   [left right bottom top near far]
   (gl-matrix-mode :projection)
   (gl-load-identity-matrix)
+  ;; N.B. gl-ortho seems to be totally deprecated in anything resembling modern
+  ;; OpenGL.
   (gl-ortho left right bottom top near far)
   (gl-matrix-mode :modelview))
 

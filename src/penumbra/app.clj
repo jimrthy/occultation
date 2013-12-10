@@ -296,7 +296,9 @@ Q: Is this name one of my typos?"
            (event/publish! :update)
            (controller/invalidated! false))
          (push-matrix
-          (clear 0 0 0)
+          ;; Doing this overwrites the clear-color set by the client.
+          #_(clear 0 0 0)
+          (clear)
           (event/publish! app :display))
          (Thread/sleep 1)
          (window/update! app))
@@ -314,11 +316,9 @@ Q: Is this name one of my typos?"
   ;; it seems like this should be kicked off using an executor.
   (println "Kicking off a single thread")
   (.start (Thread. (context/with-context nil
-                     (println "Entering a window loop in a background thread")
-                     ;; Multiple method clash.
-                     ;; app is both an IPersistentMap and an IDeref.
-                     (comment (pprint app))
-                     (println app)
+                     ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
+                     ;; And this doesn't seem worth preferring one over the other.
+                     (println "Entering a window loop in a background thread\nApp:" app)
                      (try
                        (loop-fn
                         app

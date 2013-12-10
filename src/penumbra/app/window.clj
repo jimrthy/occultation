@@ -103,6 +103,8 @@
                  (ref-set window-size [w h])
                  (viewport 0 0 w h)
                  ;; Q: Should this care about position?
+                 ;; A: Maybe not. But my caller does, if only for general configuration:
+                 ;; I want to restore window position on restart.
                  (event/publish! app :reshape [x y w h])))))
           (init! [this x y w h]
             (when-not (Display/isCreated)

@@ -45,6 +45,7 @@
            (try
              (inner-fn)
              (catch Exception e
+               (println "Unhandled exception '" e "' in pauseable loop")
                (.printStackTrace e)
                (controller/stop! app :exception)))
            (when-not (controller/stopped? app)
@@ -72,9 +73,15 @@
            (try
              (inner-fn)
              (catch Exception e
-               (println "Unhandled exception from the inner loop")
+               ;; This really shouldn't be a fatal error.
+               ;; At this point, it's equivalent to a BSOD when,
+               ;; at worst, it might be construed as a GPF.
+               (println "Unhandled exception from basic inner loop")
                (.printStackTrace e)
+               (println e)
+               (println "Where's my stack trace?")
                (controller/stop! app :exception)))
+           ;; Seems interesting that pausing exits the loop
            (when-not (or (controller/paused? app) (controller/stopped? app))
              (recur)))))
       (catch Exception e

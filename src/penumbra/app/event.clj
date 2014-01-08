@@ -29,9 +29,16 @@
          (alter event (fn [e] (update-in e [hook] #(disj % f)))))
         nil)
       (publish-
-        [_ hook args]
+        [evt hook args]
         (doseq [f (->> @event hook)]
-          (apply f args))
+          (try
+            (apply f args)
+            (catch RuntimeException ex
+              (println "Exception handling an event:\n" evt "\n" ex)
+              (.printStackTrace ex)
+              ;; Don't particularly want to propagate this.
+              ;; TODO: Use ribol to handle it
+              (throw))))
         nil)
       (subscribe-once!
         [this hook f]

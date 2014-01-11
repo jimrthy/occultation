@@ -22,7 +22,6 @@
      ;; FIXME: What is this? There's a reason I've spent so
      ;; much time trying to take a look at this.
      ;; As a random thought, give
-     ;;(night-vision.goggles.introspect-ns! 'penumbra.example.app.switch)
      ;; a shot, somewhere higher up the callstack (most likely)
      (pprint apps)
      (throw+ "FIXME: Start here"))   

@@ -14,7 +14,7 @@
             [penumbra.text :as text]
             [penumbra.app.event :as event]
             [penumbra.app.core :as app])
-  (:import [org.lwjgl.opengl Display PixelFormat]
+  (:import [org.lwjgl.opengl Display PixelFormat ContextAttribs]
            [org.newdawn.slick.opengl InternalTextureLoader TextureImpl]
            [java.awt Frame Canvas GridLayout Color]
            [java.awt.event WindowAdapter]))
@@ -38,6 +38,7 @@
   (init! [w]
     [wnd w h]
     [wnd x y w h]
+    [wnd x y w h opengl-major opengl-minor]
     "Initializes the window.")
   (destroy! [w] "Destroys the window.")
   (vsync! [w flag] "Toggles vertical sync.")
@@ -107,13 +108,18 @@
                  ;; I want to restore window position on restart.
                  (event/publish! app :reshape [x y w h])))))
           (init! [this x y w h]
+            ;; TODO: What are reasonable default values that don't
+            ;; screw up backwards compatibility?
+            (init! this x y w h ))
+          (init! [this x y w h opengl-major opengl-minor]
             (when-not (Display/isCreated)
               (Display/setResizable resizable)
-              ;; FIXME: How well does LWJGL cooperate to include
-              ;; itself as a child class these days, if I want
+              ;; Q: How well does LWJGL cooperate to include
+              ;; itself as a child window these days, if I want
               ;; to embed it??
               (Display/setParent nil)
-              (Display/create (PixelFormat.))
+              (let [version (ContextAttribs. opengl-major opengl-minor)]
+                (Display/create (PixelFormat.) version))
               ;; FIXME: Move to (x, y).
               ;; Unless full screen. Which isn't actually
               ;; implemented in any way, shape, or form yet.

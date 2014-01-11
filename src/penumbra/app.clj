@@ -137,7 +137,6 @@ Q: Is this name one of my typos?"
   (if (instance? App callbacks)
     callbacks
     (do
-      (comment (println "Creating a new application"))
       (let [window (atom nil)
             input (atom nil)
             queue (atom nil)

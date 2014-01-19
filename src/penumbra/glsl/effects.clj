@@ -8,6 +8,8 @@
 
 (ns penumbra.glsl.effects)
 
+;;; Note that this is really building a shader. Or possibly a part of a shader.
+;;; It's using a DSL
 (def lighting
   '((defn float4 lighting
       [(in int -i)

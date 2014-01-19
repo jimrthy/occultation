@@ -317,6 +317,10 @@ Q: Is this name one of my typos?"
   (.start (Thread. (context/with-context nil
                      ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
                      ;; And this doesn't seem worth preferring one over the other.
+                     ;; More importantly: this isn't actually happening
+                     ;; in the background (when it gets called from a REPL, 
+                     ;; control doesn't return until it exits.
+                     ;; FIXME: What am I understanding incorrectly?
                      (println "Entering a window loop in a background thread\nApp:" app)
                      (try
                        (loop-fn
@@ -359,4 +363,5 @@ Q: Is this name one of my typos?"
   ([callbacks]
      (start callbacks {}))
   ([callbacks state]
-     (start-single-thread (create callbacks state) loop/basic-loop)))
+     (start-single-thread (create callbacks state) loop/basic-loop)
+     (println "Returning from graphics thread creation")))

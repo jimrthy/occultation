@@ -1,4 +1,4 @@
-(defproject jimrthy/penumbra "0.6.6-SNAPSHOT"
+(defproject phronmophobic/penumbra "0.6.6-SNAPSHOT"
   :license "Eclipse Public License, just like the original."
   :description "An idiomatic wrapper for OpenGL."
   :dependencies [[slick-util "1.0.0"]

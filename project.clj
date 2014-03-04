@@ -18,4 +18,7 @@
              :injections [(require 'night-vision.goggles)
                           (require 'clojure.pprint)]}}
   :java-source-paths ["java"]
+  :javac-options ["-target" "1.6" "-source" "1.6"]
+  :java-cmd "/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java"
   :checksum-deps false)
+

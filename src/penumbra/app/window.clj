@@ -14,7 +14,7 @@
             [penumbra.text :as text]
             [penumbra.app.event :as event]
             [penumbra.app.core :as app])
-  (:import [org.lwjgl.opengl Display PixelFormat]
+  (:import [org.lwjgl.opengl Display PixelFormat DisplayMode]
            [org.newdawn.slick.opengl InternalTextureLoader TextureImpl]
            [java.awt Frame Canvas GridLayout Color]
            [java.awt.event WindowAdapter]))
@@ -24,7 +24,6 @@
 (defprotocol Window
   (display-modes [w] "Returns all display modes supported by the display device.")
   (display-mode [w] "Returns the current display mode.")
-  (display-mode! [window w h] [w mode] "Sets the display mode.")
   (title! [w title] "Sets the title of the application.")
   (size [w] "Returns the current size of the application.")
   (position [w] "Returns the current location of the application.")
@@ -66,15 +65,8 @@
           (title! [_ title] (Display/setTitle title))
           (display-modes [_] (map transform-display-mode (Display/getAvailableDisplayModes)))
           (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
-          (display-mode! [_ mode] (Display/setDisplayMode (:mode mode)))
           (display-mode! [this w h]
-            (let [modes (display-modes this)
-                  max-bpp (apply max (map :bpp modes))]
-              (->> modes
-                   (filter #(= max-bpp (:bpp %)))
-                   (sort-by #(Math/abs (apply * (map - [w h] (:resolution %)))))
-                   first
-                   (display-mode! this))))
+            (Display/setDisplayMode (DisplayMode. w h)))
           (size [this]
             (let [w (Display/getWidth)
                   h (Display/getHeight)]
@@ -124,10 +116,10 @@
             (let [[w h] (size this)]
               (viewport 0 0 w h)))
           (init! [this]
-            (init! this 800 600))
+            (init! this w h))
           (init! [this w h]
             ;; FIXME: Honestly, this should be centered, or something.
-            (init! this 0 0 w h))
+            (init! this x y w h))
           (destroy! [_]
             (-> (InternalTextureLoader/get) .clear)
             (context/destroy)

@@ -6,7 +6,8 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns penumbra.app.event)
+(ns penumbra.app.event
+  (:require [clojure.stacktrace]))
 
 (defprotocol EventHandler
   (subscribe! [event hook f] "Subscribe to event 'hook' with callback 'f'.")
@@ -35,7 +36,8 @@
             (apply f args)
             (catch RuntimeException ex
               (println "Exception handling an event:\n" evt "\n" ex)
-              (.printStackTrace ex)
+              (println (with-out-str
+                         (clojure.stacktrace/print-stack-trace ex)))
               ;; Don't particularly want to propagate this.
               ;; TODO: Use ribol to handle it
               (throw))))

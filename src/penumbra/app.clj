@@ -157,8 +157,6 @@ Q: Is this name one of my typos?"
               resizable (get state :fluid false)]
           (println "Creating a window @ " left top width height resizable)
           (println "State: " state)
-          ;; left and top seem to be getting ignored. It seems likely that's a
-          ;; window manager thing.
           (reset! window (window/create-window app left top width height resizable)))
         (reset! input (input/create app))
         (reset! queue (queue/create app))

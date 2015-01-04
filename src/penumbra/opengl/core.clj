@@ -13,20 +13,23 @@
                              ARBFramebufferObject
                              ARBTextureFloat
                              ARBHalfFloatPixel
-                             APPLEFloatPixels
-                             ATITextureFloat
-                             NVFloatBuffer
+                             #_APPLEFloatPixels
+                             #_ATITextureFloat
+                             #_NVFloatBuffer
                              EXTTransformFeedback
                              ARBTextureRectangle
-                             EXTTextureRectangle
+                             #_EXTTextureRectangle
                              EXTFramebufferObject
-                             EXTGeometryShader4))
-  (:import (org.lwjgl.util.glu GLU))
+                             #_EXTGeometryShader4))
+  #_(:import (org.lwjgl.util.glu GLUy))
   (:import (java.lang.reflect Field Method))
   (:import (org.lwjgl BufferUtils))
   (:import (penumbra PenumbraSystem Natives)))
 
-;;;
+;; This seems like an odd approach. My first guess is that it's for
+;; working around ickiness that has hopefully been reduced over the
+;; years.
+;; My second guess is that it would be really painful to avoid
 (Natives/extractNativeLibs (PenumbraSystem/getPlatform) "LWGL")
 
 
@@ -100,20 +103,20 @@
 
 ;;;
 
-(def ^:dynamic containers [
-                           APPLEFloatPixels
+(def ^:dynamic containers [#_APPLEFloatPixels
                            ARBDrawBuffers
                            ARBTextureFloat
                            ARBHalfFloatPixel
                            ARBFramebufferObject
                            EXTFramebufferObject
-                           NVFloatBuffer
-                           ATITextureFloat
-                           EXTTextureRectangle
+                           #_NVFloatBuffer
+                           #_ATITextureFloat
+                           #_EXTTextureRectangle
                            ARBTextureRectangle
                            EXTTransformFeedback
-                           EXTGeometryShader4
-                           GL20 GL15 GL14 GL13 GL12 GL11 GL30 GL31 GL32 GLU])
+                           #_GeometryShader4  ; Became standard in GL32
+                           GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32
+                           #_GLU])
 
 (defn- get-fields [^Class static-class]
   (. static-class getFields))

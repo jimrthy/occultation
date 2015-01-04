@@ -7,11 +7,11 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.shader
-  (:use [penumbra.utils :only (defmacro-)])
-  (:use [penumbra.utils :only (indexed)])
-  (:use [penumbra.opengl.core])
-  (:use [penumbra.glsl.core])
-  (:use [penumbra.translate.core])
+  (:require [penumbra.utils :refer (defmacro-)]
+            [penumbra.utils :refer (indexed)]
+            [penumbra.opengl.core :refer :all]
+            [penumbra.glsl.core :refer :all]
+            [penumbra.translate.core :refer :all])
   (:import (org.lwjgl BufferUtils)))
 
 ;;;;;;;;;;;;;;;;;;
@@ -166,11 +166,16 @@
   [& sources]
   (let [src (apply hash-map sources)
         program (gl-create-program)]
+    ;; TODO: This ignores a lot of shader possibilities.
+    ;; A lot more have been released since this was written.
+    ;; I think.
     (when-let [source (:vertex src)]
       (let [shader (gl-create-shader :vertex-shader)]
         (load-source shader source)
         (gl-attach-shader program shader)))
     (when-let [source (:geometry src)]
+      ;; This is failing to compile now.
+      ;; Q: Why?
       (let [shader (gl-create-shader :geometry-shader-ext)]
         (load-source shader source)
         (gl-attach-shader program shader)))

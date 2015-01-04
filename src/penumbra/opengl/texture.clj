@@ -7,15 +7,16 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.texture
-  (:use [penumbra.utils :only (defmacro- defn-memo)])
-  (:use [penumbra.utils :only (separate)])
-  (:use [penumbra.opengl core])
-  (:use [penumbra data])
-  (:import [org.lwjgl BufferUtils])
-  (:import (java.io File))
-  (:import (org.newdawn.slick.opengl Texture)))
+  (:require [penumbra.utils :refer (defmacro- defn-memo)]
+            [penumbra.utils :refer (separate)]
+            [penumbra.opengl.core :refer :all]
+            [penumbra.data :refer :all])
+  (:import [org.lwjgl BufferUtils]
+           [java.io File]
+           [org.newdawn.slick.opengl Texture]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Imorts
 
 (gl-import- glBindTexture gl-bind-texture)
 (gl-import- glScalef gl-scale)
@@ -24,6 +25,7 @@
 (gl-import- glTexImage1D gl-tex-image-1d)
 (gl-import- glTexImage2D gl-tex-image-2d)
 (gl-import- glTexImage3D gl-tex-image-3d)
+(gl-import- glTexStorage2D gl-tex-storage-2d)
 (gl-import- glTexSubImage1D gl-tex-sub-image-1d)
 (gl-import- glTexSubImage2D gl-tex-sub-image-2d)
 (gl-import- glTexSubImage3D gl-tex-sub-image-3d)
@@ -35,7 +37,8 @@
 (gl-import- glTexCoord1d gl-tex-coord-1)
 (gl-import- glTexCoord2d gl-tex-coord-2)
 (gl-import- glTexCoord3d gl-tex-coord-3)
-(gl-import- gluBuild2DMipmaps glu-build-2d-mipmaps)
+(comment (gl-import- gluBuild2DMipmaps glu-build-2d-mipmaps))
+(gl-import- glGenerateMipmap gl-generate-mipmap)
 (gl-import- glDeleteTextures gl-delete-textures)
 (gl-import- glPixelStorei gl-pixel-store)
 (gl-import+ glTexParameteri gl-tex-parameter)
@@ -44,7 +47,21 @@
 (gl-import glPushMatrix gl-push-matrix)
 (gl-import glPopMatrix gl-pop-matrix)
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Constants
+
+(def gl-linear GL11/GL_LINEAR)
+(def gl-linear-mipmap-linear GL11/GL_LINEAR_MIPMAP_LINEAR)
+(def gl-rgba-8 GL11/GL_RGBA8)
+(def gl-texture-2d GL11/GL_TEXTURE_2D)
+(def gl-texture-wrap-s GL11/GL_TEXTURE_WRAP_S)
+(def gl-texture-wrap-t GL11/GL_TEXTURE_WRAP_T)
+(def gl-texture-mag-filter GL11/GL_TEXTURE_MAG_FILTER)
+(def gl-texture-min-filter GL11/GL_TEXTURE_MIN_FILTER)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Implementation
 
 (def internal-formats
   [[:float 1 :luminance32f-arb]
@@ -312,19 +329,61 @@
       (add! *texture-pool* texture))
     texture))
 
-(defn build-mip-map [tex]
+(defn mip-map-count
+  "Return the number of mipmaps to auto-generate for a w x h texture
+Based on the obsolete glu functionality of generating all of them.
+
+This really isn't very good or efficient...I'm just trying to mimic
+existing functionality ASAP.
+
+At the very least...this should be using loop/recur"
+  [n]
+  (if (< 2 n)
+    1
+    (inc (mip-map-count (quot n 2)))))
+
+(defn build-sub-mip-maps
+  "The official FAQ at least implies that this is redundant"
+  [tex {:keys [level-of-detail w h format type pixel] :as params}]
+  (gl-tex-sub-image-2d gl-texture-2d level-of-detail 0 0 w h format type pixel)
+  (when (and (> 0 w)
+             (> 0 h))
+    (build-sub-mip-maps (into params {:w (quot w 2)
+                                      :h (quot h 2)
+                                      :level-of-detail (dec level-of-detail)}))))
+
+(defn build-mip-map
+  [tex]
   (let [params (params tex)
         pixel (enum (:pixel-format params))
         format (enum (:internal-format params))
         type (enum (:internal-type params))
         [w h] (dim tex)
+        n (mip-map-count (max w h))
         target (target tex)]
     (gl-bind-texture target (id tex))
-    (glu-build-2d-mipmaps
-     target format
-     w h
-     pixel type
-     (array-to-buffer (unwrap tex) (:internal-type params)))))
+    ;; Obsolete
+    (comment (glu-build-2d-mipmaps
+              target format
+              w h
+              pixel type
+              (array-to-buffer (unwrap tex) (:internal-type params))))
+    ;; Taken from www.opengl.org/wiki/Common_Mistakes#Automatic_mipmap_generation
+    (gl-tex-storage-2d gl-texture-2d n gl-rgba8 w h)
+    (comment (build-sub-mip-maps {:level-of-detail 0
+                                  :w w
+                                  :h h
+                                  :format format
+                                  :type type
+                                  :pixel pixel}))
+    ;; It looks like all the details were really building up to this
+    (gl-generate-mip-map gl-texture-2d)
+    ;; And then the follow-ups:
+    (let [tx (partial gl-tex-parameter gl-texture-2d)]
+      (tx gl-texture-wrap-s gl-repeat)
+      (tx gl-texture-wrap-t gl-repeat)
+      (tx gl-texture-mag-filter gl-linear)
+      (tx gl-texture-min-filter gl-linear-mipmap-linear))))
 
 (defn wrap
   ([s tuple dim & params]

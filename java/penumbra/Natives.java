@@ -67,25 +67,26 @@ public class Natives {
         if (in == null) {
             logger.log(Level.WARNING, "Cannot locate native library: {0}/{1}", 
                     new String[]{ sysName, fullname} );
-            return;
         }
-        File targetFile = new File(workingDir, fullname);
-        try {
-            OutputStream out = new FileOutputStream(targetFile);
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            in.close();
-            out.close();
-        } catch (FileNotFoundException ex){
-            if (ex.getMessage().contains("used by another process"))
-                return;
+	else {
+	    File targetFile = new File(workingDir, fullname);
+	    try {
+		OutputStream out = new FileOutputStream(targetFile);
+		int len;
+		while ((len = in.read(buf)) > 0) {
+		    out.write(buf, 0, len);
+		}
+		in.close();
+		out.close();
+	    } catch (FileNotFoundException ex){
+		if (ex.getMessage().contains("used by another process"))
+		    return;
 
-            throw ex;
-        }
+		throw ex;
+	    }
 
-        logger.log(Level.FINE, "Copied {0} to {1}", new Object[]{fullname, targetFile});
+	    logger.log(Level.FINE, "Copied {0} to {1}", new Object[]{fullname, targetFile});
+	}
     }
 
     private static String getExtractionDir(){

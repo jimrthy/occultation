@@ -8,17 +8,17 @@
 
 (ns ^{:author "Zachary Tellman"}
   penumbra.opengl
-  (:use [penumbra.opengl core]
-        [penumbra.utils :only (defn-memo defmacro-)])
-  (:require [penumbra.opengl.texture :as tex]
+  (:require [clojure.string :as string]
             [penumbra.data :as data]
-            [penumbra.opengl.frame-buffer :as fb]
-            [penumbra.opengl.shader :as shader]
-            [penumbra.opengl.effects :as fx]
             [penumbra.glsl.core :as glsl]
+            [penumbra.opengl.core :refer :all]
+            [penumbra.opengl.effects :as fx]
+            [penumbra.opengl.frame-buffer :as fb]
             [penumbra.opengl.geometry :as geometry]
+            [penumbra.opengl.shader :as shader]
             [penumbra.opengl.teapot :as t]
-            [clojure.string :as string])
+            [penumbra.opengl.texture :as tex]
+            [penumbra.utils :refer (defn-memo defmacro-)])
   (:import (org.lwjgl BufferUtils)
            (java.io File ByteArrayOutputStream ByteArrayInputStream)
            (javax.imageio ImageIO)
@@ -26,7 +26,9 @@
 
 ;;;
 
-(defmacro- import-fn [sym]
+(defmacro- import-fn
+  "Q: What is this doing?"
+  [sym]
   (if (meta (eval sym))
     (let [m (meta (eval sym))
           m (meta (intern (:ns m) (:name m)))

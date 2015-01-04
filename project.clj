@@ -1,20 +1,17 @@
-(defproject phronmophobic/penumbra "0.6.6-SNAPSHOT"
+(defproject phronmophobic/penumbra "0.6.7-SNAPSHOT"
   :license "Eclipse Public License, just like the original."
   :description "An idiomatic wrapper for OpenGL."
-  :dependencies [[slick-util "1.0.0"]
-                 ;; FIXME: cantor is also deprecated. Is
-                 ;; there a viable replacement yet?
-                 [kephale/cantor "0.4.1"]
-                 [org.clojure/clojure "1.5.1"]
+  :dependencies [[com.frereth/lwjgl "3.0.0a-SNAPSHOT"]
+                 [kephale/cantor "0.4.1"]  ; "high-performance floating point math" -- deprecated
+                 [org.clojure/clojure "1.7.0-alpha4"]
                  [org.clojure/math.combinatorics "0.0.2"]
-                 [kephale/lwjgl "2.9.0"]
                  ;; TODO: At one point, Zach mentioned that he'd managed
                  ;; to eliminate all native dependencies. Is this an
                  ;; example of what he was talking about?
                  ;; (c.f. java/penumbra/Natives.java)
-                 [kephale/lwjgl-natives "2.9.0"]
-                 [kephale/lwjgl-util "2.9.0"]
-                 [slingshot "0.10.3"]]
+                 #_[kephale/lwjgl-natives "2.9.0"]
+                 #_[kephale/lwjgl-util "2.9.0"]
+                 [slick-util "1.0.0"]]   ; for things like image and font loading. Status seems questionable
   :profiles {:dev {:source-paths ["dev"]
                    :dependencies [[org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]]

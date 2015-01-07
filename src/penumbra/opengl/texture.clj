@@ -11,8 +11,9 @@
             [penumbra.utils :refer (separate)]
             [penumbra.opengl.core :refer :all]
             [penumbra.data :refer :all])
-  (:import [org.lwjgl BufferUtils]
-           [java.io File]
+  (:import [java.io File]
+           [org.lwjgl BufferUtils]
+           [org.lwjgl.opengl GL11]
            [org.newdawn.slick.opengl Texture]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,6 +53,7 @@
 
 (def gl-linear GL11/GL_LINEAR)
 (def gl-linear-mipmap-linear GL11/GL_LINEAR_MIPMAP_LINEAR)
+(def gl-repeat GL11/GL_REPEAT)
 (def gl-rgba-8 GL11/GL_RGBA8)
 (def gl-texture-2d GL11/GL_TEXTURE_2D)
 (def gl-texture-wrap-s GL11/GL_TEXTURE_WRAP_S)
@@ -369,7 +371,7 @@ At the very least...this should be using loop/recur"
               pixel type
               (array-to-buffer (unwrap tex) (:internal-type params))))
     ;; Taken from www.opengl.org/wiki/Common_Mistakes#Automatic_mipmap_generation
-    (gl-tex-storage-2d gl-texture-2d n gl-rgba8 w h)
+    (gl-tex-storage-2d gl-texture-2d n gl-rgba-8 w h)
     (comment (build-sub-mip-maps {:level-of-detail 0
                                   :w w
                                   :h h
@@ -377,13 +379,20 @@ At the very least...this should be using loop/recur"
                                   :type type
                                   :pixel pixel}))
     ;; It looks like all the details were really building up to this
-    (gl-generate-mip-map gl-texture-2d)
+    (gl-generate-mipmap gl-texture-2d)
     ;; And then the follow-ups:
-    (let [tx (partial gl-tex-parameter gl-texture-2d)]
-      (tx gl-texture-wrap-s gl-repeat)
-      (tx gl-texture-wrap-t gl-repeat)
-      (tx gl-texture-mag-filter gl-linear)
-      (tx gl-texture-min-filter gl-linear-mipmap-linear))))
+    ;; This fails because gl-tex-parameter is a macro. Hmmph.
+    (comment (let [tx (partial gl-tex-parameter gl-texture-2d)]
+               (tx gl-texture-wrap-s gl-repeat)
+               (tx gl-texture-wrap-t gl-repeat)
+               (tx gl-texture-mag-filter gl-linear)
+               (tx gl-texture-min-filter gl-linear-mipmap-linear)))
+    ;; Do it by long-hand instead. How ironic and backwards!
+    ;; FIXME: This should be a normal function
+    (gl-tex-parameter gl-texture-2d gl-texture-wrap-s gl-repeat)
+    (gl-tex-parameter gl-texture-2d gl-texture-wrap-t gl-repeat)
+    (gl-tex-parameter gl-texture-2d gl-texture-mag-filter gl-linear)
+    (gl-tex-parameter gl-texture-2d gl-texture-min-filter gl-linear-mipmap-linear)))
 
 (defn wrap
   ([s tuple dim & params]

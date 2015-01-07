@@ -7,12 +7,13 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.slate
-  (:use [penumbra.utils :only [defmacro- defn-memo]]
-        [clojure.pprint]
-        [penumbra.utils :only [separate]]
-        [penumbra.opengl core]
-        [penumbra.app core])
-  (:import [org.lwjgl.opengl Pbuffer PixelFormat]))
+  (:require [penumbra.utils :refer (defmacro- defn-memo)]
+            [clojure.pprint :refer (pprint)]
+            [penumbra.utils :refer (separate)]
+            [penumbra.opengl.core :refer :all]
+            [penumbra.app.core :refer :all])
+  ;; Q: What happened to PixelFormat?
+  (:import [org.lwjgl.opengl #_Pbuffer #_PixelFormat]))
 
 ;;;
 
@@ -23,9 +24,19 @@
 (def ^:dynamic *slate* nil)
 
 (defn supported?
-  "Checks whether pixel buffers are supported."
+  "Checks whether pixel buffers are supported.
+Based on forum.lwjgl.org/index.php?topic=4800.210:
+
+There's no cross-platform abstraction for pbuffers,
+but you can use the OS-sepcific APIs.
+
+It sounds like this should figure out which platform it's
+is running and use that.
+
+TODO: Until that happens, this namespace should really be
+considered obsolete."
   []
-  (< 0 (bit-and Pbuffer/PBUFFER_SUPPORTED (Pbuffer/getCapabilities))))
+  (comment (< 0 (bit-and Pbuffer/PBUFFER_SUPPORTED (Pbuffer/getCapabilities)))))
 
 (defn create
   "Creates a slate."
@@ -34,7 +45,7 @@
   ([parent]
      (let [drawable (when-let [drawable-fn (some-> *app* :window :drawable)]
                       (drawable-fn))
-           pixel-buffer (Pbuffer. 1 1 (-> (PixelFormat.)) drawable)]
+           pixel-buffer (comment (Pbuffer. 1 1 (-> (PixelFormat.)) drawable))]
        (struct-map slate-struct
          :drawable (constantly pixel-buffer)
          :pixel-buffer pixel-buffer))))

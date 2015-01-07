@@ -135,7 +135,7 @@
          (apply viewport old-view#)))))
 
 (gl-import- glOrtho gl-ortho)
-(gl-import- gluPerspective glu-perspective)
+(comment (gl-import- gluPerspective glu-perspective))
 
 (defmacro with-projection
   "Sets the projection matrix within the inner scope.  'projection' must actively set the projection matrix, i.e. call (ortho-view ...)"
@@ -158,9 +158,10 @@
 (defn frustum-view
   "Create a standard perspective view."
   [fovy aspect near far]
+  (throw (ex-info "Obsolete. Return a matrix to pass in to shader instead" {}))
   (gl-matrix-mode :projection)
   (gl-load-identity-matrix)
-  (glu-perspective (double fovy) (double aspect) (double near) (double far))
+  (comment (glu-perspective (double fovy) (double aspect) (double near) (double far)))
   (gl-matrix-mode :modelview))
 
 ;;Geometry

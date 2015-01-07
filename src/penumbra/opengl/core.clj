@@ -8,7 +8,7 @@
 
 (ns penumbra.opengl.core
   (:use [penumbra.utils :only (defn-memo defmacro-)])
-  (:import (org.lwjgl.opengl GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32
+  (:import (org.lwjgl.opengl GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32 GL42
                              ARBDrawBuffers
                              ARBFramebufferObject
                              ARBTextureFloat
@@ -115,7 +115,7 @@
                            ARBTextureRectangle
                            EXTTransformFeedback
                            #_GeometryShader4  ; Became standard in GL32
-                           GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32
+                           GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32 GL42
                            #_GLU])
 
 (defn- get-fields [^Class static-class]
@@ -192,6 +192,7 @@
           doc-skip (if (contains? (meta import-as) :skip-wiki)
                      (:skip-wiki (meta import-as))
                      true)]
+      ;; Q: Why is this creating macros?
       `(defmacro ~import-as
          ~doc-string
          {:skip-wiki ~doc-skip

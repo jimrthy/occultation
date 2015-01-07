@@ -176,7 +176,7 @@
     (when-let [source (:geometry src)]
       ;; This is failing to compile now.
       ;; Q: Why?
-      (let [shader (gl-create-shader :geometry-shader-ext)]
+      (let [shader (gl-create-shader :geometry-shader)]
         (load-source shader source)
         (gl-attach-shader program shader)))
     (when-let [source (:fragment src)]

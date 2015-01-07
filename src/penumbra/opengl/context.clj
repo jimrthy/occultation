@@ -7,11 +7,14 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.opengl.context
-  (:use [penumbra.opengl core]
-        [penumbra opengl]
-        [penumbra.opengl.geometry :only [basic-renderer]])
+  ;; FIXME: Don't do :refer :all
   (:require [penumbra.data :as data]
+            [penumbra.opengl.geometry :refer (basic-renderer)]
+            [penumbra.opengl :refer :all]
+            [penumbra.opengl.core :refer :all]
             [penumbra.opengl.capabilities :as cap])
+  ;; FIXME: Start Here
+  ;; Switch to GLFW
   (:import [org.lwjgl.opengl Display]))
 
 ;;;
@@ -56,6 +59,7 @@
 (defmacro with-context [context & body]
   `(let [context-exists?# ~context
          context# (or ~context (create-context))]
+     ;; TODO: Don't use dynamic vars or binding
      (binding [*display-list* (:display-list context#)
                *texture-pool* (:texture-pool context#)
                *font-cache* (:font-cache context#)

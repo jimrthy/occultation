@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -14,7 +14,7 @@
             [penumbra.text :as text]
             [penumbra.app.event :as event]
             [penumbra.app.core :as app])
-  (:import [org.lwjgl.opengl Display PixelFormat ContextAttribs DisplayMode]
+  (:import [org.lwjgl.opengl ContextAttribs DisplayMode]
            [org.newdawn.slick.opengl InternalTextureLoader TextureImpl]
            [java.awt Frame Canvas GridLayout Color]
            [java.awt.event WindowAdapter]))
@@ -22,26 +22,26 @@
 ;;;
 
 (defprotocol Window
+  (close? [w] "Returns true if the user has requested it be closed.")
+  (destroy! [w] "Destroys the window.")
   (display-modes [w] "Returns all display modes supported by the display device.")
   (display-mode [w] "Returns the current display mode.")
-  (title! [w title] "Sets the title of the application.")
-  (size [w] "Returns the current size of the application.")
-  (position [w] "Returns the current location of the application.")
-  (resizable! [w flag] "Sets whether the window is resizable or not.")
-  (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
-  (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
-  (close? [w] "Returns true if the user has requested it be closed.")
-  (process! [w] "Processes all messages from the operating system.")
-  (update! [w] "Swaps the buffers.")
+  (fullscreen! [w flag] "Toggles fullscreen mode.")
   (handle-resize! [w] "Handles any resize events.  If there wasn't a resizing, this is a no-op.")
   (init! [w]
     [wnd w h]
     [wnd x y w h]
     [wnd x y w h opengl-major opengl-minor]
     "Initializes the window.")
-  (destroy! [w] "Destroys the window.")
-  (vsync! [w flag] "Toggles vertical sync.")
-  (fullscreen! [w flag] "Toggles fullscreen mode."))
+  (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
+  (position [w] "Returns the current location of the application.")
+  (process! [w] "Processes all messages from the operating system.")
+  (resizable! [w flag] "Sets whether the window is resizable or not.")
+  (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
+  (size [w] "Returns the current size of the application.")
+  (title! [w title] "Sets the title of the application.")
+  (update! [w] "Swaps the buffers.")
+  (vsync! [w flag] "Toggles vertical sync."))
 
 ;;;
 
@@ -61,30 +61,21 @@
             window-position (ref [x y])]
         (reify
           Window
-          (vsync! [_ flag] (Display/setVSyncEnabled flag))
-          (fullscreen! [_ flag] (Display/setFullscreen flag))
-          (title! [_ title] (Display/setTitle title))
+          (close? [this] (try
+                           ;; TODO: Don't use a dynamic "global" like this
+                           ;; But this seems expedient
+                           (GLFW/glfwWindowShouldClose *window*)
+                           (catch Exception e
+                             true)))
+          (destroy! [this]
+            (-> (InternalTextureLoader/get) .clear)
+            (context/destroy)
+            (GLFW/glfwDestroyWindow *window*))
           (display-modes [_] (map transform-display-mode (Display/getAvailableDisplayModes)))
           (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
           (display-mode! [this w h]
             (Display/setDisplayMode (DisplayMode. w h)))
-          (size [this]
-            (let [w (Display/getWidth)
-                  h (Display/getHeight)]
-              [w h]))
-          (position [this]
-            (let [x (Display/getX)
-                  y  (Display/getY)]
-              [x y]))
-          (resized? [this]
-            (Display/wasResized))
-          (invalidated? [_] (Display/isDirty))
-          (close? [_] (try
-                        (Display/isCloseRequested)
-                        (catch Exception e
-                          true)))
-          (update! [_] (Display/update))
-          (process! [_] (Display/processMessages))
+          (fullscreen! [_ flag] (Display/setFullscreen flag))
           (handle-resize! [this]
             (dosync
              ;; This winds up calling :reshape, which seems as though
@@ -126,10 +117,21 @@
           (init! [this w h]
             ;; FIXME: Honestly, this should be centered, or something.
             (init! this x y w h))
-          (destroy! [_]
-            (-> (InternalTextureLoader/get) .clear)
-            (context/destroy)
-            (Display/destroy))))))
+          (invalidated? [_] (Display/isDirty))
+          (position [this]
+            (let [x (Display/getX)
+                  y  (Display/getY)]
+              [x y]))
+          (process! [_] (Display/processMessages))
+          (resized? [this]
+            (Display/wasResized))
+          (size [this]
+            (let [w (Display/getWidth)
+                  h (Display/getHeight)]
+              [w h]))
+          (title! [_ title] (Display/setTitle title))
+          (update! [_] (Display/update))
+          (vsync! [_ flag] (Display/setVSyncEnabled flag))))))
 
 (defn create-fixed-window 
   "One of the truly obnoxious pieces of this puzzle is that

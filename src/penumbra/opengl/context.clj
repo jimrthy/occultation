@@ -13,9 +13,23 @@
             [penumbra.opengl :refer :all]
             [penumbra.opengl.core :refer :all]
             [penumbra.opengl.capabilities :as cap])
-  ;; FIXME: Start Here
-  ;; Switch to GLFW
-  (:import [org.lwjgl.opengl Display]))
+  ;; These are what I needed to actually do anything useful
+  ;; in a very simple test app.
+  ;; May not make any sense here.
+  #_(:import [java.nio IntBuffer]
+           [org.lwjgl Sys]
+           [org.lwjgl.glfw
+            Callbacks
+            GLFW
+            GLFWCursorEnterCallback
+            GLFWCursorPosCallback
+            GLFWErrorCallback
+            GLFWKeyCallback
+            GLFWMouseButtonCallback
+            GLFWScrollCallback
+            GLFWvidmode]
+           [org.lwjgl.opengl GL11 GLContext]
+           [org.lwjgl.system MemoryUtil]))
 
 ;;;
 
@@ -56,6 +70,11 @@
   ([context]
      (data/clear! (:texture-pool context))))
 
+;; TODO: This should probably just go away completely
+;; Or, at the very least, be trimmed back to something that
+;; works usefully with Stuart Sierra's Components.
+;; Or maybe not: that library has mixed opinions, and this layer
+;; shouldn't involve any more libraries than is required.
 (defmacro with-context [context & body]
   `(let [context-exists?# ~context
          context# (or ~context (create-context))]

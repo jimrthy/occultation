@@ -7,23 +7,28 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app.window
-  (:use [penumbra.opengl])
   (:require [penumbra.opengl
              [texture :as texture]
              [context :as context]]
+            ;; FIXME: Don't do this.
+            [penumbra.opengl :refer :all]
+            [penumbra.opengl.core :refer (gl-false)]
             [penumbra.text :as text]
             [penumbra.app.event :as event]
             [penumbra.app.core :as app])
-  (:import [org.lwjgl.opengl ContextAttribs DisplayMode]
+  (:import [org.lwjgl.glfw GLFW GLFWvidmode]
+           [org.lwjgl.system MemoryUtil]
            [org.newdawn.slick.opengl InternalTextureLoader TextureImpl]
            [java.awt Frame Canvas GridLayout Color]
-           [java.awt.event WindowAdapter]))
+           [java.awt.event WindowAdapter]
+           [java.nio ByteBuffer IntBuffer]))
 
 ;;;
 
 (defprotocol Window
   (close? [w] "Returns true if the user has requested it be closed.")
   (destroy! [w] "Destroys the window.")
+  (display-mode! [window w h] [w mode] "Sets the window size")
   (display-modes [w] "Returns all display modes supported by the display device.")
   (display-mode [w] "Returns the current display mode.")
   (fullscreen! [w flag] "Toggles fullscreen mode.")
@@ -45,11 +50,31 @@
 
 ;;;
 
-(defn- transform-display-mode [m]
-  {:resolution [(.getWidth m) (.getHeight m)]
-   :bpp (.getBitsPerPixel m)
-   :fullscreen (.isFullscreenCapable m)
-   :mode m})
+(defn- transform-display-mode [^ByteBuffer m]
+  (let [m1 (GLFWvidmode. m)]
+    {:resolution {:x (.getWidth m1) :y (.getHeight m1)}
+     :red (.getRedBits m1)
+     :green (.getGreenBits m1)
+     :blue (.getBlueBits m1)
+     :refresh-rate (.getRefreshRate m1)
+     :mode m1}))
+
+(defn query-display-modes
+  "Returns a map of all display modes available on monitor n"
+  [^Long handle]
+  (let [count-buffer (IntBuffer/allocate 1)
+        ;; Currently, this is crashing my entire JVM
+        raw-buffer (GLFW/glfwGetVideoModes handle count-buffer)]
+    (throw (ex-info "Not Implemented"
+                    {:possibilities raw-buffer
+                     :problem "Not sure how to move forward"}))))
+
+(defn pick-monitor
+  "LWJGL and GLFW support multiple monitors now.
+  Which makes life significantly more complicated.
+  For now, just go with the primary"
+  []
+  (GLFW/glfwGetPrimaryMonitor))
 
 (defn create-window
   ([app resizable]
@@ -58,24 +83,56 @@
      (create-window 0 0 w h resizable))
   ([app x y w h resizable]
       (let [window-size (ref [w h])
-            window-position (ref [x y])]
+            window-position (ref [x y])
+            hwnd (atom nil)]
         (reify
           Window
           (close? [this] (try
-                           ;; TODO: Don't use a dynamic "global" like this
-                           ;; But this seems expedient
-                           (GLFW/glfwWindowShouldClose *window*)
-                           (catch Exception e
+                           (GLFW/glfwWindowShouldClose @hwnd)
+                           (catch RuntimeException e
                              true)))
           (destroy! [this]
             (-> (InternalTextureLoader/get) .clear)
             (context/destroy)
-            (GLFW/glfwDestroyWindow *window*))
-          (display-modes [_] (map transform-display-mode (Display/getAvailableDisplayModes)))
-          (display-mode [_] (transform-display-mode (Display/getDisplayMode)))
+            ;; It's tempting to call glfwTerminate after this.
+            ;; That temptation should be avoided.
+            (GLFW/glfwDestroyWindow @hwnd))
           (display-mode! [this w h]
-            (Display/setDisplayMode (DisplayMode. w h)))
-          (fullscreen! [_ flag] (Display/setFullscreen flag))
+            (GLFW/glfwSetWindowSize @hwnd w h))
+          (display-mode! [this mode]
+            ;; The original version was much more clever, including maximizing
+            ;; the color bits. That doesn't really seem to be an option in
+            ;; LWJGL3.
+            ;; That may be my lack of understanding, of course -- James
+            (display-mode! this (:mode mode)))
+          (display-modes [this]
+            ;; Doesn't make any sense until after glfwInit.
+            ;; Then again, neither does anything else in here.
+            (let [monitors (GLFW/glfwGetMonitors)
+                  count (.capacity monitors)]
+              (if (< 0 count)
+                (let [prime (GLFW/glfwGetPrimaryMonitor)
+                      queryer (fn [acc n]
+                                (let [handle (.get monitors n)]
+                                  (assoc acc (if (= handle prime)
+                                               :prime
+                                               (GLFW/glfwGetMonitorName handle))
+                                         (query-display-modes handle))))]
+                  (reduce queryer {} (range count)))
+                (throw (ex-info "No monitors!" {})))))
+          (display-mode
+            [_]
+            (-> (pick-monitor)
+                GLFW/glfwGetVideoMode
+                transform-display-mode))
+          (fullscreen! [_ flag]
+            ;; This fails: have to assign the window to a monitor when we create it.
+            ;; The interesting bit would really to have two windows sharing a context.
+            ;; Then show one or the other, depending on this flag.
+            ;; Maybe we could create a second window the first time a caller tries to
+            ;; alter this?
+            (comment (Display/setFullscreen flag))
+            (throw (RuntimeException. "Not Implemented")))
           (handle-resize! [this]
             (dosync
              ;; This winds up calling :reshape, which seems as though
@@ -93,45 +150,73 @@
           (init! [this x y w h]
             ;; TODO: What are reasonable default values that don't
             ;; screw up backwards compatibility?
-            (init! this x y w h ))
+            (init! this x y w h 3 2))
           (init! [this x y w h opengl-major opengl-minor]
-            (when-not (Display/isCreated)
-              (Display/setResizable resizable)
-              ;; Q: How well does LWJGL cooperate to include
-              ;; itself as a child window these days, if I want
-              ;; to embed it??
-              (Display/setParent nil)
-              (let [version (ContextAttribs. opengl-major opengl-minor)]
-                (Display/create (PixelFormat.) version))
+            (GLFW/glfwWindowHint GLFW/GLFW_RESIZABLE (if resizable 1 0))
+            (GLFW/glfwWindowHint GLFW/GLFW_CONTEXT_VERSION_MAJOR opengl-major)
+            (GLFW/glfwWindowHint GLFW/GLFW_CONTEXT_VERSION_MINOR opengl-minor)
+            (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE gl-false)
+            (let [handle (GLFW/glfwCreateWindow w h (:title app) MemoryUtil/NULL MemoryUtil/NULL)]
+              ;; This sort of thing was added to the road map for GLFW 3.2, but
+              ;; it really isn't something that anyone wants
+              (comment (Display/setParent nil))
               ;; FIXME: Move to (x, y).
               ;; Unless full screen. Which isn't actually
               ;; implemented in any way, shape, or form yet.
-              (Display/setLocation x y)
-              (display-mode! this w h))
-            (-> (InternalTextureLoader/get) .clear)
-            (TextureImpl/bindNone)
-            (let [[w h] (size this)]
-              (viewport 0 0 w h)))
+              (GLFW/glfwSetWindowPos handle x y)
+              (comment (display-mode! this w h))
+
+              ;; Configure the rest of it
+              ( .clear (InternalTextureLoader/get))
+              (TextureImpl/bindNone)
+              (let [[w h] (size this)]
+                (viewport 0 0 w h))
+              (GLFW/glfwShowWindow hwnd)
+              (reset! hwnd handle)))
           (init! [this]
             (init! this w h))
           (init! [this w h]
             ;; FIXME: Honestly, this should be centered, or something.
             (init! this x y w h))
-          (invalidated? [_] (Display/isDirty))
+          (invalidated? [_]
+            ;; Deprecated may be the wrong name.
+            ;; I haven't seen anything in the docs or source that looks like
+            ;; this sort of thing is still available.
+            (throw (RuntimeException. "Deprecated")))
           (position [this]
-            (let [x (Display/getX)
-                  y  (Display/getY)]
-              [x y]))
-          (process! [_] (Display/processMessages))
+            (let [hwnd @hwnd
+                  x-buffer (IntBuffer/allocate 1)
+                  y-buffer (IntBuffer/allocate 1)]
+              (GLFW/glfwGetWindowPos hwnd x-buffer y-buffer)
+              (let [x (.get x-buffer)
+                    y (.get y-buffer)]
+                ;; I'd rather do:
+                #_{:x x
+                   :y y}
+                ;; But existing code is based around
+                [x y])))
+          (process! [_] (GLFW/glfwPollEvents))
           (resized? [this]
-            (Display/wasResized))
+            ;; This doesn't seem like a very useful approach.
+            ;; But it's a start.
+            ;; TODO: Be more realistic about this. If nothing else,
+            ;; need to update w and h if this has changed.
+            ;; Better yet: set a flag in a resize event handler
+            (let [last-size @window-size
+                  current-size (size this)]
+              (not= last-size current-size)))
           (size [this]
-            (let [w (Display/getWidth)
-                  h (Display/getHeight)]
-              [w h]))
-          (title! [_ title] (Display/setTitle title))
-          (update! [_] (Display/update))
-          (vsync! [_ flag] (Display/setVSyncEnabled flag))))))
+            (let [w-buffer (IntBuffer/allocate 1)
+                  h-buffer (IntBuffer/allocate 2)]
+              (GLFW/glfwGetWindowSize @hwnd w-buffer h-buffer)
+              [(.get w-buffer) (.get h-buffer)]))
+          (title! [this title]
+            (GLFW/glfwSetWindowTitle @hwnd title))
+          (update! [this]
+            (process! this)
+            (GLFW/glfwSwapBuffers @hwnd))
+          (vsync! [_ flag]
+            (GLFW/glfwSwapInterval (if flag 1 0)))))))
 
 (defn create-fixed-window 
   "One of the truly obnoxious pieces of this puzzle is that
@@ -149,7 +234,10 @@ create-resizable-window is almost exactly the same."
   ([app x y w h]
      (create-window app x y w h true)))
 
-(defmacro with-window [window & body]
+(defmacro with-window
+  "This should probably be considered obsolete.
+  At the same time...it's very tempting."
+  [window & body]
   `(context/with-context nil
      (binding [*window* ~window]
        ~@body)))

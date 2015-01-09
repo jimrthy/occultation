@@ -32,6 +32,9 @@
 ;; My second guess is that it would be really painful to avoid
 (Natives/extractNativeLibs (PenumbraSystem/getPlatform) "LWGL")
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Dynamic Globals
+;;; Really, these should go away
 
 (def ^:dynamic *primitive-type* "What type of primitive is being rendered?" nil)
 
@@ -117,6 +120,14 @@
                            #_GeometryShader4  ; Became standard in GL32
                            GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32 GL42
                            #_GLU])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Named Constants
+;;; Mainly for stylistic consistency
+;;; To avoid magic numbers.
+;;; These would probably make more sense in their own namespace
+
+(def gl-false GL11/GL_FALSE)
 
 (defn- get-fields [^Class static-class]
   (. static-class getFields))

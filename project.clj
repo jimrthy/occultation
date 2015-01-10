@@ -4,6 +4,7 @@
   :dependencies [[com.frereth/lwjgl "3.0.0a-SNAPSHOT"]
                  [kephale/cantor "0.4.1"]  ; "high-performance floating point math" -- deprecated
                  [org.clojure/clojure "1.7.0-alpha4"]
+                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
                  [org.clojure/math.combinatorics "0.0.2"]
                  ;; TODO: At one point, Zach mentioned that he'd managed
                  ;; to eliminate all native dependencies. Is this an

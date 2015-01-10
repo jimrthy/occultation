@@ -182,6 +182,7 @@
             ;; Deprecated may be the wrong name.
             ;; I haven't seen anything in the docs or source that looks like
             ;; this sort of thing is still available.
+            ;; TODO: Looks like there's a window refresh callback that covers this
             (throw (RuntimeException. "Deprecated")))
           (position [this]
             (let [hwnd @hwnd

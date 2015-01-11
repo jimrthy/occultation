@@ -19,50 +19,71 @@
             GLFWMouseButtonCallback
             GLFWScrollCallback]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Helper Functions
 
-(comment (defprotocol InputHandler
-           (init! [i] "Initialize the input handler.")
-           (destroy! [i] "Clean up the input handlers.")
-           (key-repeat! [i flag] "Sets whether a constantly pressed key triggers multiple key-press events.")
-           (key-pressed? [i key] "Checks whether a key is currently pressed.")
-           (button-pressed? [i button] "Checks whether a mouse button is currently presseed.")
-           (mouse-location [i] "Returns the current location of the mouse.  [0 0] is the upper-left corner.")
-           (handle-mouse! [i] "Handle mouse input.")
-           (handle-keyboard! [i] "Mouse keyboard input.")))
+(defn take-every-other
+  "There's probably a core built-in for this"
+  [seq]
+  (->> seq
+       (partition 2)
+       (map first)))
 
-;;Keyboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Macros
 
-(comment (defn- current-key []
-           (let [char (Keyboard/getEventCharacter)
-                 key (Keyboard/getEventKey)
-                 name (Keyboard/getKeyName key)]
-             [name
-              (cond
-                (= key Keyboard/KEY_DELETE) :delete
-                (= key Keyboard/KEY_BACK) :back
-                (= key Keyboard/KEY_RETURN) :return
-                (= key Keyboard/KEY_ESCAPE) :escape
-                (not= 0 (int char)) (str char)
-                :else (-> name .toLowerCase keyword))]))
+(defmacro callback-creators
+  "FIXME: This desperately needs to be tested.
 
-         (defn- handle-keyboard [app pressed-keys]
-           (Keyboard/poll)
-           (loop [pressed-keys pressed-keys]
-             (if (Keyboard/next)
-               (let [[name key] (current-key)]
-                 (if (Keyboard/getEventKeyState)
-                   (do
-                     (if (Keyboard/isRepeatEvent)
-                       (event/publish! app :key-type key)
-                       (event/publish! app :key-press key))
-                     (recur (assoc pressed-keys name key)))
-                   (let [pressed-key (pressed-keys name)]
-                     (event/publish! app :key-type pressed-key)
-                     (when-not (Keyboard/isRepeatEvent)
-                       (event/publish! app :key-release pressed-key))
-                     (recur (dissoc pressed-keys name)))))
-               pressed-keys))))
+  Create callback wrappers that can be used to associate your callbacks with a given window.
+
+  name - installation function names will be based around this.
+  You'll wind up with low-level-~name-callback, basic-~name-callback, and ~name-callback
+
+  klass - the class that will be overridden
+
+  installer - the function to call to do the actual callback installation
+
+  initial-parameters - what the lowest-level callback handler gets called with
+
+  translation - how the basic callback handler translates those initial-parameters
+  into something meaningful. This is really a let vector. The values bound here will
+  be sent to the intermediate callback, in order. This part isn't smart enough to cope
+  with type hints yet.
+
+  translated - the shape of the data that should be fed into a core.async channel
+  from the high-level callback handler. This is probably a map of values from translation."
+  [name klass installer initial-parameters translation translated]
+  ;; TODO: Doesn't the auto-gensym only work inside a back-tick?
+  ;; (i.e. I think I need to use real gensyms here
+  (let [name# name
+        low-level-name# (symbol (str "low-level-" name# "-callback"))
+        translator-name# (symbol (str "basic-" name# "-callback"))
+        high-level-name# (symbol (str name# "-callback"))
+        params-1# initial-parameters
+        translated-values# (take-every-other params-1#)]
+    `(do (defn ~'low-level-name#
+           [^Long window# cb#]
+           ;; Note that this breaks if the superclass ctor needs parameters
+           (let [handler# (proxy [~klass] []
+                           (invoke
+                             ~(conj [^Long window#] params-1#)
+                             (cb# ~@params-1#)))]
+             (~installer window# handler#)))
+         (defn ~'translator-name#
+           [^Long window# cb#]
+           (let [wrapper (fn ~(conj [^Long window#] params-1#)
+                           (let ~translation
+                             (cb# window# ~@translated-values#)))]))
+         (defn ~high-level-name#
+           [^Long window# channel#]
+           (let [wrapper (fn [^Long window# ~@translated-values#]
+                           (>!! channel# ~translated))])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Keyboard
+
+;;; Lowest level events
 
 (defn low-level-key-callback
   "Sets up cb as the keyboard event handler for window.
@@ -128,9 +149,18 @@ This gets called when a key is pressed, repeated, or released"
                                          :mods mod-flags}}))]
     (basic-key-callback window wrapper)))
 
+;;; Individual character events
+
+;;;; FIXME: Debug this!
+(callback-creators char GLFWCharCallback GLFW/glfwSetCharCallback
+                   [code-point]
+                   [code code-point]
+                   {:code-point code})
+
 ;;; TODO: Also need char and char-mods callbacks
 
-;;Mouse
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Mouse
 
 (defn- mouse-button->sym [button-idx]
   (condp = button-idx

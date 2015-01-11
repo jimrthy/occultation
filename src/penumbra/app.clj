@@ -26,8 +26,25 @@
              [event :as event]
              [queue :as queue]]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
 
+(defrecord App
+    [state
+     clock
+     event-handler
+     queue
+     window
+     input-handler
+     controller
+     parent]
+  clojure.lang.IDeref
+  (deref [_] @state))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Helpers
+
+;; Q: What's this for? How does it interact w/ name-with-attributes?
 (defn- transform-extend-arglists [protocol name arglists template]
   (list*
    `fn
@@ -90,19 +107,10 @@ Q: Is this name one of my typos?"
                     callbacks)]
     callbacks))
 
-(defrecord App
-    [state
-     clock
-     event-handler
-     queue
-     window
-     input-handler
-     controller
-     parent]
-  clojure.lang.IDeref
-  (deref [_] @state))
-
 (auto-extend App `window/Window  @(:window this))
+;;; This is where the stuffing starts getting ripped out.
+;;; Since the InputHandler protocol is gone.
+;;; So...how do I want to move forward?
 (auto-extend App `input/InputHandler @(:input-handler this))
 (auto-extend App `queue/QueueHash @(:queue this))
 (auto-extend App `event/EventHandler (:event-handler this))

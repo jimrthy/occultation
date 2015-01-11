@@ -64,22 +64,22 @@
         params-1# initial-parameters
         translated-values# (take-every-other params-1#)]
     `(do (defn ~'low-level-name#
-           [^Long window# cb#]
+           [^Long ~'window# cb#]
            ;; Note that this breaks if the superclass ctor needs parameters
            (let [handler# (proxy [~klass] []
                             (invoke
-                              ~(conj [^Long window#] params-1#)
+                              ~(conj [^Long ~'window#] params-1#)
                               (cb# ~@params-1#)))]
-             (~installer window# handler#)))
+             (~installer ~'window# handler#)))
          (defn ~'translator-name#
            [^Long window# cb#]
-           (let [wrapper (fn ~(conj [^Long window#] params-1#)
+           (let [wrapper (fn ~(conj [^Long ~'window#] params-1#)
                            (let ~translation
-                             (cb# window# ~@translated-values#)))]))
+                             (cb# ~'window# ~@translated-values#)))]))
          (defn ~high-level-name#
-           [^Long window# channel#]
-           (let [wrapper (fn [^Long window# ~@translated-values#]
-                           (>!! channel# ~translated))])))))
+           [^Long ~'window# channel#]
+           (let [wrapper (fn [^Long ~'window# ~@translated-values#]
+                           (>!! channel# ~'window# ~translated))])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Keyboard
@@ -145,18 +145,18 @@ This gets called when a key is pressed, repeated, or released"
   [^Long window
    channel]
   (let [wrapper (fn [^Long window key-sym action-sym mod-flags]
-                  (>!! channel {:window {:key key-sym
-                                         :action action-sym
-                                         :mods mod-flags}}))]
+                  (>!! channel {window {:key key-sym
+                                        :action action-sym
+                                        :mods mod-flags}}))]
     (basic-key-callback window wrapper)))
 
 ;;; Individual character events
 
 ;;;; FIXME: Debug this!
-(callback-creators char GLFWCharCallback GLFW/glfwSetCharCallback
-                   [code-point]
-                   [code code-point]
-                   {:code-point code})
+(comment (callback-creators char GLFWCharCallback GLFW/glfwSetCharCallback
+                            [code-point]
+                            [code code-point]
+                            {:code-point code}))
 
 ;;; TODO: Also need char and char-mods callbacks
 
@@ -219,7 +219,7 @@ This gets called when a key is pressed, repeated, or released"
   [^Long window
    cb]
   (let [handler (fn [^Long window ^Long button ^Long action ^Long mods]
-                  (let [button-sym (mouse-button-sym button)
+                  (let [button-sym (mouse-button->sym button)
                         action-sym (key-action->sym action)
                         mod-flags (key-mods->sym-seq mods)]
                     (cb window button-sym action-sym mod-flags)))]
@@ -231,8 +231,8 @@ This gets called when a key is pressed, repeated, or released"
   (let [handler (fn [^Long window button-sym action-sym mod-flags]
                   (>!! channel {window {:button button-sym
                                         :action action-sym
-                                        :mods mod-flags}}))
-        (basic-mouse-button-callback window handler)]))
+                                        :mods mod-flags}}))]
+    (basic-mouse-button-callback window handler)))
 
 ;;; FIXME: Also need callbacks for mouse-position, mouse-scroll, and mouse-enter
 ;;; I think it's time to write a macro

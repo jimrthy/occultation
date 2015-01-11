@@ -24,13 +24,13 @@
   #_(:import (org.lwjgl.util.glu GLUy))
   (:import (java.lang.reflect Field Method))
   (:import (org.lwjgl BufferUtils))
-  (:import (penumbra PenumbraSystem Natives)))
+  #_(:import (penumbra PenumbraSystem Natives)))
 
 ;; This seems like an odd approach. My first guess is that it's for
 ;; working around ickiness that has hopefully been reduced over the
 ;; years.
 ;; My second guess is that it would be really painful to avoid
-(Natives/extractNativeLibs (PenumbraSystem/getPlatform) "LWGL")
+#_(Natives/extractNativeLibs (PenumbraSystem/getPlatform) "LWGL")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Dynamic Globals

@@ -12,6 +12,7 @@
             [penumbra.app.event :as event]
             [penumbra.utils :refer (indexed)])
   (:import [org.lwjgl.glfw
+            GLFW
             GLFWCursorEnterCallback
             GLFWCursorPosCallback
             GLFWErrorCallback   ; FIXME: This one's special
@@ -66,9 +67,9 @@
            [^Long window# cb#]
            ;; Note that this breaks if the superclass ctor needs parameters
            (let [handler# (proxy [~klass] []
-                           (invoke
-                             ~(conj [^Long window#] params-1#)
-                             (cb# ~@params-1#)))]
+                            (invoke
+                              ~(conj [^Long window#] params-1#)
+                              (cb# ~@params-1#)))]
              (~installer window# handler#)))
          (defn ~'translator-name#
            [^Long window# cb#]

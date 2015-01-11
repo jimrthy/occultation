@@ -20,7 +20,9 @@
   :java-source-paths ["java"]
   ;; That work-around for native dependencies doesn't seem to
   ;; work these days. I do seem to need this
-  :jvm-opts [~(str "-Djava.library.path=native/:"
+  #_(comment :jvm-opts [~(str "-Djava.library.path=native/:"
+                            (System/getProperty "java.library.path"))])
+  :jvm-opts [~(str  "-Djava.library.path=/home/james/other/Downloads/extract/lwjgl3/native/linux/x64:/usr/local/lib:"
                    (System/getProperty "java.library.path"))]
   :checksum-deps false)
 

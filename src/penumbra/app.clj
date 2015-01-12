@@ -7,14 +7,9 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app
-  (:use [penumbra.utils :only [defmacro-]]
-        [penumbra.opengl]
-        [penumbra.opengl.core]
-        [clojure.walk :only (postwalk-replace)])
-  (:require [clojure.pprint :refer [pprint]]
-            [penumbra.opengl
-             [context :as context]
-             [slate :as slate]]
+  (:require [clojure.pprint :refer (pprint)]
+            [clojure.walk :refer (postwalk-replace)]
+            [com.stuartsierra.component :as component]
             [penumbra
              [time :as time]]
             [penumbra.app
@@ -24,12 +19,19 @@
              [controller :as controller]
              [loop :as loop]
              [event :as event]
-             [queue :as queue]]))
+             [queue :as queue]]
+            [penumbra.opengl
+             [context :as context]
+             [slate :as slate]]
+            [penumbra.opengl :refer :all]
+            [penumbra.opengl.core :refer :all]
+            [penumbra.utils :refer (defmacro-)]
+            [schema.core :as s]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
-(defrecord App
+(s/defrecord App
     [state
      clock
      event-handler
@@ -39,7 +41,15 @@
      controller
      parent]
   clojure.lang.IDeref
-  (deref [_] @state))
+  (deref [_] @state)
+
+  component/Lifecycle
+  (start
+   [this]
+   this)
+  (stop
+   [this]
+   this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helpers
@@ -81,8 +91,7 @@
 ;;;
 
 (defn- update-
-  "Updates the state of the application.
-Q: Is this name one of my typos?"
+  "Updates the state of the application."
   [app state f args]
   ;; TODO: Still need to remember to pprint App.
   ;; state here *must* be an Atom.
@@ -179,6 +188,13 @@ Q: Is this name one of my typos?"
 (defn app
   "Returns the current application."
   []
+  ;; This is vaguely tempting, but it's really just bad practice.
+  ;; Dynamic vars aren't necessarily evil, but they definitely should
+  ;; not be hidden.
+  ;; TODO: I'm leaving it around so I can get something that builds.
+  ;; But, really, this needs to go away.
+  (comment (throw (RuntimeException. "obsolete")))
+  (println "FIXME: Obsolete!")
   app/*app*)
 
 (defn- transform-import-arglists [protocol name doc arglists]
@@ -214,8 +230,9 @@ Q: Is this name one of my typos?"
 (auto-import `controller/Controller
              stop! pause!)
 
-(auto-import `input/InputHandler
-             key-pressed? button-pressed? key-repeat! mouse-location)
+(comment
+  (auto-import `input/InputHandler
+               key-pressed? button-pressed? key-repeat! mouse-location))
 
 (defn clock
   "Returns the application clock."

@@ -1,31 +1,19 @@
-(ns user
-  (:require [clojure.java.io :as io]
-            [clojure.inspector :as i]
-            [clojure.string :as str]
-            [clojure.pprint :refer (pprint)]
-            [clojure.repl :refer :all]
-            [clojure.test :as test]
-            [clojure.tools.namespace.repl :refer (refresh refresh-all)]
-            [penumbra.app :as app]))
+(ns user)
 
-(def system nil)
+;; This is an old trick from Pedestal. When system.clj doesn't compile,
+;; it can prevent the REPL from starting, which makes debugging very
+;; difficult. This extra step ensures the REPL starts, no matter what.
 
-(defn init
+(defn dev
   []
-  {})
+  (require 'dev)
+  (in-ns 'dev))
 
-(defn start
-  []
-  {})
-
-(defn stop []
-  {})
 
 (defn go
   []
-  (init)
-  (start))
+  (println "Don't you mean (dev) ?"))
 
-(defn reset []
-  (stop)
-  (refresh :after 'user/go))
+(defn reset
+  []
+  (println "Yep. You mean (dev)"))

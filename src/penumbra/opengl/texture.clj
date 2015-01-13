@@ -14,6 +14,7 @@
   (:import [java.io File]
            [org.lwjgl BufferUtils]
            [org.lwjgl.opengl GL11]
+           [org.lwjgl.system MemoryUtil]
            [org.newdawn.slick.opengl Texture]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -267,9 +268,9 @@
         (gl-tex-parameter (:target params) (enum p) (params p))))
     (when-not valid?
       (condp = (count dim)
-        1 (gl-tex-image-1d target 0 i-f (dim 0) 0 p-f i-t nil)
-        2 (gl-tex-image-2d target 0 i-f (dim 0) (dim 1) 0 p-f i-t nil)
-        3 (gl-tex-image-3d target 0 i-f (dim 0) (dim 1) (dim 2) 0 p-f i-t nil)))
+        1 (gl-tex-image-1d target 0 i-f (dim 0) 0 p-f i-t MemoryUtil/NULL)
+        2 (gl-tex-image-2d target 0 i-f (dim 0) (dim 1) 0 p-f i-t MemoryUtil/NULL)
+        3 (gl-tex-image-3d target 0 i-f (dim 0) (dim 1) (dim 2) 0 p-f i-t MemoryUtil/NULL)))
     id))
 
 (defn create-texture [& params]

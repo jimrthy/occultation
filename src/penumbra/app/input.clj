@@ -8,6 +8,7 @@
 
 (ns penumbra.app.input
   (:require [clojure.core.async :as async :refer (>!!)]
+            [com.stuartsierra.component :as component]
             [penumbra.app.window :as window]
             [penumbra.app.event :as event]
             [penumbra.utils :refer (indexed)])
@@ -19,6 +20,19 @@
             GLFWKeyCallback
             GLFWMouseButtonCallback
             GLFWScrollCallback]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+;;; Q: Is there anything for this to do, realistically?
+(defrecord Input []
+  component/Lifecycle
+  (start
+    [this]
+    this)
+  (stop
+    [this]
+    this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -267,3 +281,10 @@ This gets called when a key is pressed, repeated, or released"
                                      [(Mouse/getX) (- h (Mouse/getY))]))
                (handle-mouse! [_] (dosync (alter buttons #(handle-mouse app %))))
                (handle-keyboard! [_] (dosync (alter keys #(handle-keyboard app %))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
+
+(defn ctor
+  [defaults]
+  (map->Input defaults))

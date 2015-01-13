@@ -46,9 +46,19 @@
   component/Lifecycle
   (start
    [this]
+   (window/init! this)
+   (comment (input/init! this))
+   (queue/init! this)
+   (controller/resume! this)
+   (event/publish! this :init)   
    this)
   (stop
    [this]
+   (event/publish! this :close)
+   (controller/stop! this)
+   (when-not (:parent this)
+     (window/destroy! this)
+     (comment (input/destroy! this)))
    this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -120,29 +130,10 @@
 ;;; This is where the stuffing starts getting ripped out.
 ;;; Since the InputHandler protocol is gone.
 ;;; So...how do I want to move forward?
-(auto-extend App `input/InputHandler @(:input-handler this))
+(comment (auto-extend App `input/InputHandler @(:input-handler this)))
 (auto-extend App `queue/QueueHash @(:queue this))
 (auto-extend App `event/EventHandler (:event-handler this))
 (auto-extend App `controller/Controller (:controller this))
-
-(extend
-    App
-  app/App
-  {:speed! (fn [app speed] (time/speed! (:clock app) speed))
-   :now (fn [app] @(:clock app))
-   :callback- (fn [app event args] ((-> app :callbacks event) args))
-   :init! (fn [app]
-            (window/init! app)
-            (input/init! app)
-            (queue/init! app)
-            (controller/resume! app)
-            (event/publish! app :init))
-   :destroy! (fn [app]
-               (event/publish! app :close)
-               (controller/stop! app)
-               (when-not (:parent app)
-                 (window/destroy! app)
-                 (input/destroy! app)))})
 
 (defmethod print-method penumbra.app.App [app writer]
   (.write writer "App"))
@@ -150,6 +141,7 @@
 (defn create
   "Creates an application."
   [callbacks state]
+  (throw (ex-info "obsolete" {:problem "Use Components instead"}))
   ;; I'm guessing that this next check allows nested idempotent creation
   (if (instance? App callbacks)
     callbacks
@@ -175,7 +167,7 @@
           (println "Creating a window @ " left top width height resizable)
           (println "State: " state)
           (reset! window (window/create-window app left top width height resizable)))
-        (reset! input (input/create app))
+        (comment (reset! input (input/create app)))
         (reset! queue (queue/create app))
         (doseq [[event f] (alter-callbacks clock callbacks)]
           (comment (println "Adding a callback for " event))
@@ -306,27 +298,28 @@
 (defn single-thread-main-loop
   "Does everything in one pass."
   ([app]
-     (doto app
-       window/process!
-       input/handle-keyboard!
-       input/handle-mouse!
-       window/handle-resize!)
-     (if ((some-fn window/invalidated? controller/invalidated?) app)
-       (do
-         (doto app
-           (event/publish! :enqueue)
-           (event/publish! :update)
-           (controller/invalidated! false))
-         (push-matrix
-          ;; Doing this overwrites the clear-color set by the client.
-          #_(clear 0 0 0)
-          (clear)
-          (event/publish! app :display))
-         (Thread/sleep 1)
-         (window/update! app))
-       (Thread/sleep 1))
-     (if (window/close? app)
-       (controller/stop! app :requested-by-user))))
+   (doto app
+     window/process!
+     #_input/handle-keyboard!
+     #_input/handle-mouse!
+     window/handle-resize!)
+   (if ((some-fn window/invalidated? controller/invalidated?) app)
+     (do
+       (doto app
+         (event/publish! :enqueue)
+         (event/publish! :update)
+         (controller/invalidated! false))
+       ;; N.B.: push-matrix is pretty much totally obsolete
+       (push-matrix
+        ;; Doing this overwrites the clear-color set by the client.
+        #_(clear 0 0 0)
+        (clear)
+        (event/publish! app :display))
+       (Thread/sleep 1)
+       (window/update! app))
+     (Thread/sleep 1))
+   (if (window/close? app)
+     (controller/stop! app :requested-by-user))))
 
 (defn start-single-thread
   "This is being called from start. With an App instance and penumbra.app.loop/basic-loop"
@@ -388,3 +381,25 @@
   ([callbacks state]
      (start-single-thread (create callbacks state) loop/basic-loop)
      (println "Returning from graphics thread creation")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Obsolete, at least in their current forms
+(defn speed!
+  [app speed]
+  (time/speed! (:clock app) speed))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Pulic
+
+(defn now
+  [app]
+  @(:clock app))
+
+(defn callback-
+  [app event args]
+  ((-> app :callbacks event) args))
+
+
+(defn ctor
+  [defaults]
+  (map->App defaults))

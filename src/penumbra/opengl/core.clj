@@ -233,5 +233,6 @@
   "Calls glGetInteger."
   [param]
   (let [buf (BufferUtils/createIntBuffer 16)]
+    ;; FIXME: Eliminate reflection warning
     (gl-get-integer (enum param) buf)
     (.get buf 0)))

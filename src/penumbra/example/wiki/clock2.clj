@@ -1,6 +1,6 @@
 (ns penumbra.example.wiki.clock2
-  (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app :as app]
+            [penumbra.opengl :refer :all]))
 
 (defn draw-clock [hour minute second]
   (push-matrix
@@ -33,7 +33,7 @@
     (ortho-view (- aspect) aspect (- height) height -1 1)
     state))
 
-(defn update [[delta time] state]
+(defn update- [[delta time] state]
   (assoc state
     :hour (+ (:hour state) (/ delta 3600))
     :minute (+ (:minute state) (/ delta 60))
@@ -44,5 +44,5 @@
   (app/repaint!))
 
 (app/start
-  {:display display, :reshape reshape, :update update, :init init}
+  {:display display, :reshape reshape, :update update-, :init init}
   {:hour 0 :minute 0 :second 0})

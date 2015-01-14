@@ -141,6 +141,7 @@
 (defn create
   "Creates an application."
   [callbacks state]
+  ;; This is breaking compilation from the wiki clock2.clj example.
   (throw (ex-info "obsolete" {:problem "Use Components instead"}))
   ;; I'm guessing that this next check allows nested idempotent creation
   (if (instance? App callbacks)

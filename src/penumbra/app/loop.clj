@@ -72,6 +72,10 @@
          (loop []
            (try
              (inner-fn)
+             ;; TODO: Would probably make a lot of sense to also
+             ;; catch RuntimeException instances. If only to
+             ;; distinguish between the two.
+             ;; And ExceptionInfo, of course
              (catch Exception e
                ;; This really shouldn't be a fatal error.
                ;; At this point, it's equivalent to a BSOD when,

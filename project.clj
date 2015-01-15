@@ -1,7 +1,7 @@
 (defproject phronmophobic/penumbra "0.6.7-SNAPSHOT"
   :license "Eclipse Public License, just like the original."
   :description "An idiomatic wrapper for OpenGL."
-  :dependencies [[com.frereth/lwjgl "3.0.0a-SNAPSHOT"]
+  :dependencies [[com.frereth/lwjgl "3.0.0a1-SNAPSHOT"]
                  [com.stuartsierra/component "0.2.2"]
                  [kephale/cantor "0.4.1"]  ; "high-performance floating point math" -- deprecated
                  ;; TODO: At one point, Zach mentioned that he'd managed
@@ -24,7 +24,7 @@
   ;; work these days. I do seem to need this
   #_(comment :jvm-opts [~(str "-Djava.library.path=native/:"
                             (System/getProperty "java.library.path"))])
-  :jvm-opts [~(str  "-Djava.library.path=/home/james/other/Downloads/extract/lwjgl3/native/linux/x64:/usr/local/lib:"
+  :jvm-opts [~(str  "-Djava.library.path=/usr/local/lib:"
                    (System/getProperty "java.library.path"))]
   :checksum-deps false)
 

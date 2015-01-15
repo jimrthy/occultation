@@ -1,6 +1,8 @@
 (ns penumbra.example.wiki.clock2
-  (:require [penumbra.app :as app]
-            [penumbra.opengl :refer :all]))
+  (:require [com.stuartsierra.component :as component]
+            [penumbra.app :as app]
+            [penumbra.opengl :refer :all]
+            [penumbra.system :as system]))
 
 (defn draw-clock [hour minute second]
   (push-matrix
@@ -43,6 +45,10 @@
   (draw-clock (:hour state) (:minute state) (:second state))
   (app/repaint!))
 
-(app/start
-  {:display display, :reshape reshape, :update update-, :init init}
-  {:hour 0 :minute 0 :second 0})
+;; This is convenient for being able to just run the namespace, but it's
+;; breaking basic compilation.
+;; With no real hint about the actual problem.
+(comment) (let [system (system/init {:callbacks
+                                     {:display display, :reshape reshape, :update update-, :init init}
+                                     :state {:hour 0 :minute 0 :second 0}})]
+            (component/start system))

@@ -32,21 +32,26 @@
 ;;; Schema
 
 (s/defrecord App
-    [state
+    [callbacks
      clock
-     event-handler
-     queue
-     window
-     input-handler
      controller
-     parent]
+     event-handler
+     input-handler
+     main-loop
+     parent
+     queue
+     state
+     threading
+     window]
   clojure.lang.IDeref
   (deref [_] @state)
 
   component/Lifecycle
   (start
    [this]
-   (window/init! this)
+   (if-let [win (:window this)]
+     (window/init! win)
+     (throw (ex-info "What do I do without a window?" this)))
    (comment (input/init! this))
    (queue/init! this)
    (controller/resume! this)
@@ -126,7 +131,7 @@
                     callbacks)]
     callbacks))
 
-(auto-extend App `window/Window  @(:window this))
+(comment (auto-extend App `window/Window  @(:window this)))
 ;;; This is where the stuffing starts getting ripped out.
 ;;; Since the InputHandler protocol is gone.
 ;;; So...how do I want to move forward?
@@ -159,7 +164,7 @@
             ;; to cast a Map to an Atom.
             state-atom (atom state)
             controller (controller/create)
-            app (App. state-atom clock event queue window input controller app/*app*)]
+            app (comment (App. state-atom clock event queue window input controller app/*app*))]
         (let [top (get state :top 0)
               left (get state :left 0)
               width (get state :width 800)
@@ -361,6 +366,23 @@
                        (app/destroy! app)))))
   app)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Obsolete, at least in their current forms
+(defn speed!
+  [app speed]
+  (time/speed! (:clock app) speed))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
+
+(defn now
+  [app]
+  @(:clock app))
+
+(defn callback-
+  [app event args]
+  ((-> app :callbacks event) args))
+
 (defn start
   "Starts a window from scratch, or from a closed state.
    Supported callbacks are:
@@ -380,26 +402,10 @@
   ([callbacks]
      (start callbacks {}))
   ([callbacks state]
-     (start-single-thread (create callbacks state) loop/basic-loop)
-     (println "Returning from graphics thread creation")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Obsolete, at least in their current forms
-(defn speed!
-  [app speed]
-  (time/speed! (:clock app) speed))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Pulic
-
-(defn now
-  [app]
-  @(:clock app))
-
-(defn callback-
-  [app event args]
-  ((-> app :callbacks event) args))
-
+   (throw (ex-info "Trying to do this creates circular dependencies" {:obsolete "Use Components instead"}))
+   (comment (let [default-system (system/init {:callbacks callbacks, :main-loop loop/basic-loop, :state state, :threading :single})]
+              (component/start default-system)))
+   (println "Returning from graphics thread creation")))
 
 (defn ctor
   [defaults]

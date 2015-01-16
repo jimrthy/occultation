@@ -50,5 +50,7 @@
 ;; With no real hint about the actual problem.
 (comment) (let [system (system/init {:callbacks
                                      {:display display, :reshape reshape, :update update-, :init init}
-                                     :state {:hour 0 :minute 0 :second 0}})]
+                                     :state {:hour 0 :minute 0 :second 0}})
+                (windowed-system (update-in system [:app :window])
+                                 )]
             (component/start system))

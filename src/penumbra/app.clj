@@ -26,17 +26,19 @@
             [penumbra.opengl :refer :all]
             [penumbra.opengl.core :refer :all]
             [penumbra.utils :refer (defmacro-)]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [org.lwjgl.glfw GLFW GLFWErrorCallback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
 (s/defrecord App
-    [callbacks
+    [done
+     callbacks
      clock
      controller
      event-handler
-     input-handler
+     input
      main-loop
      parent
      queue
@@ -49,9 +51,9 @@
   component/Lifecycle
   (start
    [this]
-   (if-let [win (:window this)]
-     (window/init! win)
-     (throw (ex-info "What do I do without a window?" this)))
+   (comment (if-let [win (:window this)]
+              (window/init! win)
+              (throw (ex-info "What do I do without a window?" this))))
    (comment (input/init! this))
    (queue/init! this)
    (controller/resume! this)
@@ -61,9 +63,10 @@
    [this]
    (event/publish! this :close)
    (controller/stop! this)
-   (when-not (:parent this)
-     (window/destroy! this)
-     (comment (input/destroy! this)))
+   ;; This almost seems to imply that parent is really a bool
+   (comment (when-not (:parent this)
+              (window/destroy! this)
+              (input/destroy! this)))
    this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -143,7 +146,7 @@
 (defmethod print-method penumbra.app.App [app writer]
   (.write writer "App"))
 
-(defn create
+(comment (defn create
   "Creates an application."
   [callbacks state]
   ;; This is breaking compilation from the wiki clock2.clj example.
@@ -181,7 +184,7 @@
             (event/subscribe! app :display (fn [& args] (f @state-atom)))
             (event/subscribe! app event (fn [& args] (update- app state-atom f args)))))
         (println "App created")
-        app))))
+        app)))))
 
 (defn app
   "Returns the current application."
@@ -222,8 +225,8 @@
       (let [imports (set imports)]
         (filter #(imports (:name %)) sigs))))))
 
-(auto-import `window/Window
-             title! size fullscreen! vsync! display-mode! display-modes)
+(comment (auto-import `window/Window
+                      title! size fullscreen! vsync! display-mode! display-modes))
 
 (auto-import `controller/Controller
              stop! pause!)

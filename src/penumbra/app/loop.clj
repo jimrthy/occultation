@@ -37,24 +37,25 @@
 (defn pauseable-loop
   [app outer-fn inner-fn]
   (with-app app
-    (try
-      (outer-fn
-       (fn []
-         (loop []
-           (controller/wait! app)
-           (try
-             (inner-fn)
-             (catch Exception e
-               (println "Unhandled exception '" e "' in pauseable loop")
-               (.printStackTrace e)
-               (controller/stop! app :exception)))
-           (when-not (controller/stopped? app)
-             (recur)))))
-      (catch Exception e
-        (.printStackTrace e)
-        (controller/stop! app :exception))
-      (finally
-        ))))
+    (let [cntrlr (:controller app)]
+      (try
+        (outer-fn
+         (fn []
+           (loop []
+             (controller/wait! cntrlr)
+             (try
+               (inner-fn)
+               (catch Exception e
+                 (println "Unhandled exception '" e "' in pauseable loop")
+                 (.printStackTrace e)
+                 (controller/stop! cntrlr :exception)))
+             (when-not (controller/stopped? cntrlr)
+               (recur)))))
+        (catch Exception e
+          (.printStackTrace e)
+          (controller/stop! cntrlr :exception))
+        (finally
+          (println app "\nexiting!"))))))
 
 (defn pauseable-thread
   [app outer-fn inner-fn]
@@ -66,32 +67,33 @@
 (defn basic-loop
   [app outer-fn inner-fn]
   (with-app app
-    (try
-      (outer-fn
-       (fn []
-         (loop []
-           (try
-             (inner-fn)
-             ;; TODO: Would probably make a lot of sense to also
-             ;; catch RuntimeException instances. If only to
-             ;; distinguish between the two.
-             ;; And ExceptionInfo, of course
-             (catch Exception e
-               ;; This really shouldn't be a fatal error.
-               ;; At this point, it's equivalent to a BSOD when,
-               ;; at worst, it might be construed as a GPF.
-               (println "Unhandled exception from basic inner loop")
-               (.printStackTrace e)
-               (println e)
-               (println "Where's my stack trace?")
-               (controller/stop! app :exception)))
-           ;; Seems interesting that pausing exits the loop
-           (when-not (or (controller/paused? app) (controller/stopped? app))
-             (recur)))))
-      (catch Exception e
-        (println "Unhandled exception from the outer loop:\n" (class e))
-        (.printStackTrace e)
-        (controller/stop! app :exception))
-      (finally
-        ;; Not that anything is actually happening
-        (println "Cleaning up the/a messaging loop")))))
+    (let [cntrlr (:controller app)]
+      (try
+        (outer-fn
+         (fn []
+           (loop []
+             (try
+               (inner-fn)
+               ;; TODO: Would probably make a lot of sense to also
+               ;; catch RuntimeException instances. If only to
+               ;; distinguish between the two.
+               ;; And ExceptionInfo, of course
+               (catch Exception e
+                 ;; This really shouldn't be a fatal error.
+                 ;; At this point, it's equivalent to a BSOD when,
+                 ;; at worst, it might be construed as a GPF.
+                 (println "Unhandled exception from basic inner loop")
+                 (.printStackTrace e)
+                 (println e)
+                 (println "Where's my stack trace?")
+                 (controller/stop! cntrlr :exception)))
+             ;; Seems interesting that pausing exits the loop
+             (when-not (or (controller/paused? cntrlr) (controller/stopped? cntrlr))
+               (recur)))))
+        (catch Exception e
+          (println "Unhandled exception from the outer loop:\n" (class e))
+          (.printStackTrace e)
+          (controller/stop! cntrlr :exception))
+        (finally
+          ;; Not that anything is actually happening
+          (println "Cleaning up the/a messaging loop"))))))

@@ -8,6 +8,7 @@
 
 (ns penumbra.app.core)
 
+;; TODO: These next 2 dynamic vars need to go away
 (def ^:dynamic *app*
   "Current application."
   nil)

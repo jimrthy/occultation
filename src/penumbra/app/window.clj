@@ -17,7 +17,8 @@
             [penumbra.opengl.core :refer (gl-false)]
             [penumbra.text :as text]
             [penumbra.app.event :as event]
-            [penumbra.app.core :as app])
+            [penumbra.app.core :as app]
+            [schema.core :as s])
   (:import [org.lwjgl.glfw GLFW GLFWvidmode]
            [org.lwjgl.system MemoryUtil]
            [org.newdawn.slick.opengl InternalTextureLoader TextureImpl]
@@ -28,75 +29,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
-(comment (defprotocol Window
-           (close? [w] "Returns true if the user has requested it be closed.")
-           (destroy! [w] "Destroys the window.")
-           (display-mode! [window w h] [w mode] "Sets the window size")
-           (display-modes [w] "Returns all display modes supported by the display device.")
-           (display-mode [w] "Returns the current display mode.")
-           (fullscreen! [w flag] "Toggles fullscreen mode.")
-           (handle-resize! [w] "Handles any resize events.  If there wasn't a resizing, this is a no-op.")
-           (init! [w]
-             [wnd w h]
-             [wnd x y w h]
-             [wnd x y w h opengl-major opengl-minor]
-             "Initializes the window.")
-           (invalidated? [w] "Returns true if the window is invalidated by the operating system.")
-           (position [w] "Returns the current location of the application.")
-           (process! [w] "Processes all messages from the operating system.")
-           (resizable! [w flag] "Sets whether the window is resizable or not.")
-           (resized? [w] "Returns true if application was resized since handle-resize! was last called.")
-           (size [w] "Returns the current size of the application.")
-           (title! [w title] "Sets the title of the application.")
-           (update! [w] "Swaps the buffers.")
-           (vsync! [w flag] "Toggles vertical sync.")))
+(def Position {:left s/Int
+               :top s/Int
+               :width s/Int
+               :height s/Int})
 
-(declare customize-window-hints)
-(defrecord Window [^Long handle
-                   position
-                   hints
-                   ^Long monitor
-                   ^Long share
-                   title]
-  component/Lifecycle
-  (start
-    [this]
-    (GLFW/glfwDefaultWindowHints)
-    ;; TODO: Default to invisible window that's convenient for moving
-    (when (seq hints)
-      (customize-window-hints hints))
-    (let [;; TODO: Don't use magic numbers for the defaults
-          x (:left position 0)
-          y (:top position 0)
-          w (:width position 800)
-          h (:height position 600)
-          mon (or monitor MemoryUtil/NULL)
-          shared-handle (or share MemoryUtil/NULL)
-          hwnd (or handle
-                   (GLFW/glfwCreateWindow w h title mon shared-handle))]
-      (GLFW/glfwSetWindowPos handle x y)
-      (GLFW/glfwMakeContextCurrent handle)   ; This is how it all gets wired together
-      ;; I suppose this next value's debatable...but why would anyone ever not
-      ;; want it?
-      (GLFW/glfwSwapInterval 1)
-      (when (:visible hints)
-        (GLFW/glfwShowWindow handle))
-      (into this {:handle hwnd
-                  :position {:left x, :top y,
-                             :width w, :height h}
-                  :monitor mon
-                  :share shared-handle})))
-  (stop
-    [this]
-    (GLFW/glfwDestroyWindow handle)
-    (assoc this :handle nil)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Internal Helpers
-
-(defn customize-window-hints
-  [hints]
-  (let [hint-map {:resizable GLFW/GLFW_RESIZABLE         ; bool
+(def hint-map {:resizable GLFW/GLFW_RESIZABLE         ; bool
                   ;; Don't show until it's positioned
                   ; :visible GLFW/GLFW_VISIBLE             ; bool
                   :decorated GLFW/GLFW_DECORATED         ; bool
@@ -121,10 +59,64 @@
                   :robust GLFW/GLFW_CONTEXT_ROBUSTNESS  ; interesting enum
                   :forward GLFW/GLFW_OPENGL_FORWARD_COMPAT
                   :deugging GLFW/GLFW_OPENGL_DEBUG_CONTEXT
-                  :profile GLFW/GLFW_OPENGL_PROFILE}]
-    (doseq [[k v] hints]
-      (GLFW/glfwWindowHint (k hint-map) v))
-    (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE K/gl-false)))
+                  :profile GLFW/GLFW_OPENGL_PROFILE})
+;; TODO: Make the legal values explicit
+(def legal-window-hints {(s/enum (keys hint-map)) s/Any})
+
+(declare customize-window-hints)
+
+(s/defrecord Window [handle :- s/Int
+                     position :- Position
+                     hints :- legal-window-hints
+                     monitor :- s/Int
+                     share :- s/Int
+                     title :- s/Str]
+  component/Lifecycle
+  (start
+   [this]
+   (GLFW/glfwDefaultWindowHints)
+   ;; TODO: Default to invisible window that's convenient for moving
+   (when (seq hints)
+     (customize-window-hints hints))
+   (let [;; TODO: Don't use magic numbers for the defaults
+         x (:left position 0)
+         y (:top position 0)
+         w (:width position 800)
+         h (:height position 600)
+         mon (or monitor MemoryUtil/NULL)
+         shared-handle (or share MemoryUtil/NULL)
+         hwnd (or handle
+                  (GLFW/glfwCreateWindow w h title mon shared-handle))]
+     (GLFW/glfwSetWindowPos handle x y)
+     (GLFW/glfwMakeContextCurrent handle)   ; This is how it all gets wired together
+     ;; I suppose this next value's debatable...but why would anyone ever not
+     ;; want it?
+     (GLFW/glfwSwapInterval 1)
+     (when (:visible hints)
+       (GLFW/glfwShowWindow handle))
+     (into this {:handle hwnd
+                 :position {:left x, :top y,
+                            :width w, :height h}
+                 :monitor mon
+                 :share shared-handle})))
+  (stop
+   [this]
+   (GLFW/glfwDestroyWindow handle)
+   (assoc this :handle nil)))
+
+;; TODO: Make this go away. Callers should
+;; pick the Component out of the app
+(def window-holder {:window Window
+                    s/Any s/Any})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internal Helpers
+
+(defn customize-window-hints
+  [hints]
+  (doseq [[k v] hints]
+    (GLFW/glfwWindowHint (k hint-map) v))
+  (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE K/gl-false))
 
 (defn- transform-display-mode [^ByteBuffer m]
   (let [m1 (GLFWvidmode. m)]
@@ -163,10 +155,6 @@
                   hwnd (atom nil)]
               (reify
                 Window
-                (close? [this] (try
-                                 (GLFW/glfwWindowShouldClose @hwnd)
-                                 (catch RuntimeException e
-                                   true)))
                 (destroy! [this]
                   (-> (InternalTextureLoader/get) .clear)
                   (context/destroy)
@@ -254,12 +242,6 @@
                 (init! [this w h]
                   ;; FIXME: Honestly, this should be centered, or something.
                   (init! this x y w h))
-                (invalidated? [_]
-                  ;; Deprecated may be the wrong name.
-                  ;; I haven't seen anything in the docs or source that looks like
-                  ;; this sort of thing is still available.
-                  ;; TODO: Looks like there's a window refresh callback that covers this
-                  (throw (RuntimeException. "Deprecated")))
                 (position [this]
                   (let [hwnd @hwnd
                         x-buffer (IntBuffer/allocate 1)
@@ -289,9 +271,6 @@
                     [(.get w-buffer) (.get h-buffer)]))
                 (title! [this title]
                   (GLFW/glfwSetWindowTitle @hwnd title))
-                (update! [this]
-                  (process! this)
-                  (GLFW/glfwSwapBuffers @hwnd))
                 (vsync! [_ flag]
                   (GLFW/glfwSwapInterval (if flag 1 0)))))))
 
@@ -320,16 +299,51 @@
        ~@body))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Public
+;;;; Public
 
-(defn pick-monitor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; API
+;;; Part of refactoring away from a Protocol to Components
+
+(s/defn close? :- s/Bool
+  [owner :- window-holder]
+  (let [^Window window (:window owner)
+        ^Long handle (:handle window)]
+    (try
+      (GLFW/glfwWindowShouldClose handle)
+      (catch RuntimeException e
+        true))))
+
+(s/defn invalidated? :- s/Bool
+  [owner :- window-holder]
+  (let [^Window window (:window owner)]
+    ;; TODO: Check whether there's been a paint
+    ;; request, or whatever the GLFW equivalent
+    ;; is, since the last time this was called
+    ;; Deprecated may be the wrong name.
+    ;; I haven't seen anything in the docs or source that looks like
+    ;; this sort of thing is still available.
+    ;; TODO: Looks like there's a window refresh callback that covers this
+    (comment (throw (RuntimeException. "Deprecated")))
+    true))
+
+(s/defn update!
+  [owner :- window-holder]
+  (let [^Window window (:window owner)
+        ^Long handle (:handle window)]
+    (GLFW/glfwSwapBuffers handle)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Management
+
+(s/defn pick-monitor :- s/Int
   "LWJGL and GLFW support multiple monitors now.
   Which makes life significantly more complicated.
   For now, just go with the primary"
   []
   (GLFW/glfwGetPrimaryMonitor))
 
-(defn ctor
+(s/defn ctor :- Window
   [{:keys [handle hints position]}]
   (let [params (cond-> {}
                  handle (assoc :handle handle)

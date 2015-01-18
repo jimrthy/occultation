@@ -1,5 +1,7 @@
 (ns penumbra.base
-  "Baseline functionality that really needs to run before everything else")
+  "Baseline functionality that really needs to run before everything else"
+  (:require [com.stuartsierra.component :as component])
+  (:import [org.lwjgl.glfw Callbacks GLFW GLFWErrorCallback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
@@ -13,8 +15,8 @@
                  (invoke
                    [error-code ^Long description]
                    (let [s (Callbacks/errorCallbackDescriptionString description)]
-                     (error-callback error-code s))))])
-      (GLFW/glfwSetErrorCallback cb))
+                     (error-callback error-code s))))]
+        (GLFW/glfwSetErrorCallback cb)))
     (GLFW/glfwInit)
     this)
   (stop
@@ -27,4 +29,4 @@
 
 (defn ctor
   [overrides]
-  (map->BaseSystem (select-in vals [error-callback])))
+  (map->BaseSystem (select-keys overrides [:error-callback])))

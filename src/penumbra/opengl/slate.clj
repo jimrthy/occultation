@@ -43,12 +43,14 @@ considered obsolete."
   ([]
      (create nil))
   ([parent]
-     (let [drawable (when-let [drawable-fn (some-> *app* :window :drawable)]
-                      (drawable-fn))
-           pixel-buffer (comment (Pbuffer. 1 1 (-> (PixelFormat.)) drawable))]
-       (struct-map slate-struct
-         :drawable (constantly pixel-buffer)
-         :pixel-buffer pixel-buffer))))
+   (throw (ex-info "This is totally broken"
+                   {:missing ['*app* 'Pbuffer]}))
+   (let [drawable (when-let [drawable-fn (some-> (comment *app*) :window :drawable)]
+                    (drawable-fn))
+         pixel-buffer (comment (Pbuffer. 1 1 (-> (PixelFormat.)) drawable))]
+     (struct-map slate-struct
+                 :drawable (constantly pixel-buffer)
+                 :pixel-buffer pixel-buffer))))
 
 (defn destroy
   "Destroys a slate."

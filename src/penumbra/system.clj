@@ -7,7 +7,9 @@
              [app :as app]
              [base :as base]
              [configuration :as config]]
-            [penumbra.app.input :as input]))
+            [penumbra.app
+             [input :as input]
+             [window :as window]]))
 
 (defn base-map
   [overriding-config-options]

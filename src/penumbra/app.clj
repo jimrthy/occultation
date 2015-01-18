@@ -56,7 +56,7 @@
               (throw (ex-info "What do I do without a window?" this))))
    (comment (input/init! this))
    (queue/init! this)
-   (controller/resume! this)
+   (controller/resume! controller)
    (event/publish! this :init)   
    this)
   (stop
@@ -141,7 +141,7 @@
 (comment (auto-extend App `input/InputHandler @(:input-handler this)))
 (auto-extend App `queue/QueueHash @(:queue this))
 (auto-extend App `event/EventHandler (:event-handler this))
-(auto-extend App `controller/Controller (:controller this))
+(comment (auto-extend App `controller/Controller (:controller this)))
 
 (defmethod print-method penumbra.app.App [app writer]
   (.write writer "App"))
@@ -228,8 +228,8 @@
 (comment (auto-import `window/Window
                       title! size fullscreen! vsync! display-mode! display-modes))
 
-(auto-import `controller/Controller
-             stop! pause!)
+(comment (auto-import `controller/Controller
+                      stop! pause!))
 
 (comment
   (auto-import `input/InputHandler
@@ -237,7 +237,9 @@
 
 (defn clock
   "Returns the application clock."
-  ([] (clock app/*app*))
+  ([]
+   (throw (ex-info "obsolete" {:problem "No more dynamic vars"}))
+   (comment (clock app/*app*)))
   ([app] (:clock app)))
 
 (defn now
@@ -307,11 +309,8 @@
 (defn single-thread-main-loop
   "Does everything in one pass."
   ([app]
-   (doto app
-     window/process!
-     #_input/handle-keyboard!
-     #_input/handle-mouse!
-     window/handle-resize!)
+   (GLFW/glfwPollEvents)
+
    (if ((some-fn window/invalidated? controller/invalidated?) app)
      (do
        (doto app
@@ -320,10 +319,11 @@
          (controller/invalidated! false))
        ;; N.B.: push-matrix is pretty much totally obsolete
        (push-matrix
-        ;; Doing this overwrites the clear-color set by the client.
-        #_(clear 0 0 0)
         (clear)
         (event/publish! app :display))
+       ;; Q: What's this for?
+       ;; Preliminary guess: to interrupt flow so that event has
+       ;; a chance to propagate
        (Thread/sleep 1)
        (window/update! app))
      (Thread/sleep 1))

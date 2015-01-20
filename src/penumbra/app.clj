@@ -186,7 +186,7 @@
         (println "App created")
         app)))))
 
-(defn app
+(s/defn app :- App
   "Returns the current application."
   []
   ;; This is vaguely tempting, but it's really just bad practice.
@@ -304,7 +304,8 @@
      (context/with-context nil
        ~@body)))
 
-;;App state
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; App state
 
 (defn single-thread-main-loop
   "Does everything in one pass."
@@ -371,9 +372,18 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Obsolete, at least in their current forms
+
+(defn pause!
+  []
+  (controller/pause! (:controller (app))))
+
 (defn speed!
   [app speed]
   (time/speed! (:clock app) speed))
+
+(s/defn title!
+  [s :- s/Str]
+  (window/title! (:window (app)) s))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public

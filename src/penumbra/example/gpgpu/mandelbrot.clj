@@ -12,7 +12,7 @@
             [penumbra.data :as data]))
 
 (defn init [state]
-
+  
   (app/title! "Mandelbrot Viewer")
 
   (defmap initialize-fractal

@@ -63,12 +63,7 @@
                (invalidated? [_] @invalidated?)
                (invalidated! [_ flag]
                  (dosync (ref-set invalidated? flag))
-                 nil)
-               (pause! [_]
-                 (dosync
-                  (ref-set paused? true)
-                  (when-not @latch
-                    (ref-set latch (CountDownLatch. 1)))))))))
+                 nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; API
@@ -86,6 +81,14 @@
 (s/defn paused?
   [component :- Controller]
   @(:paused? component))
+
+(s/defn pause!
+  [component :- Controller]
+  (dosync
+   (ref-set (:paused? component) true)
+   (let [latch (:latch component)]
+     (when-not @latch
+       (ref-set latch (CountDownLatch. 1))))))
 
 (s/defn resume!
   [component :- Controller]

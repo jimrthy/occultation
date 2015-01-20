@@ -269,8 +269,6 @@
                         h-buffer (IntBuffer/allocate 2)]
                     (GLFW/glfwGetWindowSize @hwnd w-buffer h-buffer)
                     [(.get w-buffer) (.get h-buffer)]))
-                (title! [this title]
-                  (GLFW/glfwSetWindowTitle @hwnd title))
                 (vsync! [_ flag]
                   (GLFW/glfwSwapInterval (if flag 1 0)))))))
 
@@ -326,6 +324,12 @@
     ;; TODO: Looks like there's a window refresh callback that covers this
     (comment (throw (RuntimeException. "Deprecated")))
     true))
+
+(s/defn title!
+  [window :- Window
+   title :- s/Str]
+  (GLFW/glfwSetWindowTitle (:handle window) title))
+
 
 (s/defn update!
   [owner :- window-holder]

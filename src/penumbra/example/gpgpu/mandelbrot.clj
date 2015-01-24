@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -9,11 +9,32 @@
 (ns penumbra.example.gpgpu.mandelbrot
   (:use [penumbra opengl compute])
   (:require [penumbra.app :as app]
-            [penumbra.data :as data]))
+            [penumbra.data :as data]
+            [schema.core :as s])
+  (:import [penumbra.app App]))
 
-(defn init [state]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+(def point {:x float :y float})
+
+(def state {:upper-left point
+            :lower-right point
+            :zoom float
+            :offset point
+            (s/optional-key :iterations) s/Int
+            (s/optional-key :image) s/Any
+            (s/optional-key :data) s/Any
+            (s/optional-key :repaint) s/Bool})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internal
+
+(s/defn init 
+  [app :- App
+   state :- state]
   
-  (app/title! "Mandelbrot Viewer")
+  (app/title! app "Mandelbrot Viewer")
 
   (defmap initialize-fractal
     (float3 (mix upper-left lower-right (/ :coord :dim)) 0))
@@ -46,7 +67,8 @@
 
   state)
 
-(defn reset-fractal [state]
+(s/defn reset-fractal :- state
+  [state :- state]
   (when (:data state)
     (data/release! (:data state)))
   (when (:image state)
@@ -56,41 +78,52 @@
     :image nil
     :data nil))
 
-(defn update-bounds [state]
-  (let [[w h]  (:dim state)
+(s/defn update-bounds :- state
+ [state :- state]
+  (let [{:keys [x y]}  (:dim state)
         center (:offset state)
-        radius (map #(/ % (:zoom state)) [(/ (float w) h) 1])
+        radius (map #(/ % (:zoom state)) [(/ (float x) y) 1])
         ul     (map - center radius)
         lr     (map + center radius)]
     (assoc (reset-fractal state)
       :upper-left ul
       :lower-right lr)))
 
-(defn mouse-down [[x y] button state]
+(s/defn mouse-down :- state
+  [[x y]
+   button
+   state :- state]
   (let [ul    (:upper-left state)
         lr    (:lower-right state)
-        [nx ny] (map / [x y] (:dim state))]
+        [mx my] (map / [x y] (:dim state))
+        [nx ny] (map + ul (map * [mx (- 1 my)] (map - lr ul)))]
     (update-bounds
       (assoc state
         :zoom (max 1
                    (* (:zoom state)
                       (if (= button :left) 2 0.5)))
-        :offset (map + ul (map * [nx (- 1 ny)] (map - lr ul)))))))
+        :offset {:x nx, :y ny}))))
 
-(defn reshape [[x y w h] state]
+(s/defn reshape :- state
+  [[x y w h]
+   state :- state]
+  ;; TODO: This isn't going to fly
   (ortho-view 0 1 1 0 -1 1)
   (update-bounds
     (assoc state
-      :dim [w h])))
+           :dim {:x w :y h})))
 
-(defn key-press [key state]
+(s/defn key-press :- state
+  [key state :- state]
   (cond
+    ;; pause! seems to be the wrong name for what should happen here
    (= key :escape) (app/pause!)
    :else state))
 
 (def iterations-per-frame 60)
 
-(defn update [_ state]
+(s/defn update :- state
+  [_ state :- state]
   (let [max-iterations (* 20 (Math/pow (:zoom state) 0.5))]
     (if (< (:iterations state) max-iterations)
       (with-frame-buffer
@@ -110,13 +143,17 @@
       (assoc state
         :repaint false))))
 
-(defn display [_ state]
+(s/defn display
+  [_ state :- state]
   (when (:repaint state)
     (app/repaint!))
   (blit! (:image state)))
 
-(defn start []
-  (app/start
-   {:init init, :reshape reshape, :update update, :display display, :mouse-down mouse-down, :key-press key-press}
-   (reset-fractal {:upper-left [-2.0 1.0] :lower-right [1.0 -1.0] :zoom 1 :offset [-0.5 0]})))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
 
+(defn callbacks []
+  {:init init, :reshape reshape, :update update, :display display, :mouse-down mouse-down, :key-press key-press})
+
+(defn initial-state []
+  (reset-fractal {:upper-left [-2.0 1.0] :lower-right [1.0 -1.0] :zoom 1 :offset [-0.5 0]}))

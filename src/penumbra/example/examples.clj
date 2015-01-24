@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -9,6 +9,7 @@
 (ns penumbra.example.examples
   (:use [clojure.test])
   (:require
+   [penumbra.example.demo :as demo]
    [penumbra.example.app.async :as async]
    [penumbra.example.app.switch :as switch]
    [penumbra.example.app.nested :as nested]
@@ -30,44 +31,58 @@
    [penumbra.example.gpgpu.fluid :as fluid]
    [penumbra.example.gpgpu.n-body :as nbody]))
 
+(defmacro run-test
+  [title ns-sym]
+  ;; TODO: put ns-sym into a gensym so it doesn't
+  ;; get eval'd twice
+  `(testing ~title
+      (let [callbacks (~ns-sym/callbacks)
+            state (~ns-sym/initial-state)
+            done (promise)
+            test-app (-> app
+                         (assoc-in :state state)
+                         (assoc-in :callbacks callbacks)
+                         (assoc-in :done done))]
+        @done)))
+
 (deftest run
-  (testing "Async"
-    (async/start))
-  (testing "Switch"
-    (switch/start))
-  (testing "Nested"
-    (nested/start))
-  (testing "Text"
-    (text/start))
-  (testing "Gears"
-    (gears/start))
-  (testing "Sierpinski"
-    (sierpinski/start))
-  (testing "Render-to-Texture"
-    (rtt/start))
-  (testing "Marble"
-    (marble/start))
-  (testing "Shadow"
-    (shadow/start))
-  (testing "Squares"
-    (squares/start))
-  (testing "Accumulate"
-    (accumulate/start))
-  (testing "Async"
-    (gl-async/start))
-  (testing "Tetris"
-    (tetris/start))
-  (testing "Asteroids"
-    (asteroids/start))
-  (testing "Pong"
-    (pong/start))
-  (testing "Mandelbrot"
-    (mandelbrot/start))
-  (testing "Convolution"
-    (convolution/start))
-  (testing "Brian's Brains"
-    (brian/start))
-  (testing "Fluid"
-    (fluid/start))
-  (testing "N Body"
-    (nbody/start)))
+  (let [app (demo/wrapper)]
+    (run-test "Mandelbrot" mandelbrot)
+    (testing "Async"
+      (async/start))
+    (testing "Switch"
+      (switch/start))
+    (testing "Nested"
+      (nested/start))
+    (testing "Text"
+      (text/start))
+    (testing "Gears"
+      (gears/start))
+    (testing "Sierpinski"
+      (sierpinski/start))
+    (testing "Render-to-Texture"
+      (rtt/start))
+    (testing "Marble"
+      (marble/start))
+    (testing "Shadow"
+      (shadow/start))
+    (testing "Squares"
+      (squares/start))
+    (testing "Accumulate"
+      (accumulate/start))
+    (testing "Async"
+      (gl-async/start))
+    (testing "Tetris"
+      (tetris/start))
+    (testing "Asteroids"
+      (asteroids/start))
+    (testing "Pong"
+      (pong/start))
+    (testing "Convolution"
+      (convolution/start))
+    (testing "Brian's Brains"
+      (brian/start))
+    (testing "Fluid"
+      (fluid/start))
+    (testing "N Body"
+      (nbody/start))))

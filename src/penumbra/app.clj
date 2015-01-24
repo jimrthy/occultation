@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -410,16 +410,20 @@
   (throw (ex-info "Need to think about this"
                   {:not-implemented "It would be very useful to be able to dynamically alter speed at the REPL to see what's going on"})))
 
-(comment (s/defn title!
-           [s :- s/Str]
-           (window/title! (:window (app)) s)))
+(defn now
+  [app]
+  @(:clock app))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
-(defn now
-  [app]
-  @(:clock app))
+(s/defn title!
+  "This doesn't really belong here.
+  But it is convenient, and it matches the way
+  the current API works."
+  [app :- App
+   s :- s/Str]
+  (window/title! (:window app) s))
 
 (defn callback-
   [app event args]

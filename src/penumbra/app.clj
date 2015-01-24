@@ -186,17 +186,17 @@
         (println "App created")
         app)))))
 
-(s/defn app :- App
-  "Returns the current application."
-  []
-  ;; This is vaguely tempting, but it's really just bad practice.
-  ;; Dynamic vars aren't necessarily evil, but they definitely should
-  ;; not be hidden.
-  ;; TODO: I'm leaving it around so I can get something that builds.
-  ;; But, really, this needs to go away.
-  (comment (throw (RuntimeException. "obsolete")))
-  (println "FIXME: Obsolete!")
-  app/*app*)
+(comment (s/defn app :- App
+           "Returns the current application."
+           []
+           ;; This is vaguely tempting, but it's really just bad practice.
+           ;; Dynamic vars aren't necessarily evil, but they definitely should
+           ;; not be hidden.
+           ;; TODO: I'm leaving it around so I can get something that builds.
+           ;; But, really, this needs to go away.
+           (comment (throw (RuntimeException. "obsolete")))
+           (println "FIXME: Obsolete!")
+           app/*app*))
 
 (defn- transform-import-arglists [protocol name doc arglists]
   (list*
@@ -242,52 +242,71 @@
    (comment (clock app/*app*)))
   ([app] (:clock app)))
 
-(defn now
-  "Returns the elapsed clock time, in seconds, since the application began."
-  ([] (now app/*app*))
-  ([app] @(clock app)))
+(s/defn now :- double
+  "Returns the elapsed clock time, in seconds, since GLFW was initialized, unless
+  you've called glfwSetTime.
+  Resolution is system-dependent. Typically it's in nanoseconds or microseconds."
+  []
+  (GLFW/glfwGetTime))
 
-(defn speed!
+(comment (defn speed!
   "Sets the application clock speed."
   ([speed] (speed! app/*app* speed))
-  ([app speed] (time/speed! (clock app) speed)))
+  ([app speed] (time/speed! (clock app) speed))))
 
-(defn periodic-update!
+(s/defn periodic-update!
   "Starts a recurring update, which is called 'hz' times a second.
-   Time is governed by 'clock', which defaults to the application clock.
 
    OpenGL calls cannot be made within this callback."
-  ([hz f] (periodic-update! (clock)  hz f))
-  ([clock hz f] (periodic-update! app/*app* clock hz f))
-  ([app clock hz f] (queue/periodic-enqueue! app clock hz #(update- app (:state app) f nil))))
+  [app :- App
+   hz :- s/Int
+   f :- (s/=> s/Any s/Any)]
+  (queue/periodic-enqueue! app hz #(update- app (:state app) f nil)))
 
-(defn delay!
+(s/defn delay!
   "Enqueues an update to be executed in 'delay' milliseconds.
-   Time is goverend by 'clock', which defaults to the application clock.
 
    OpenGL calls cannot be made within this callback."
-  ([delay f] (delay! (clock) delay f))
-  ([clock delay f] (delay! app/*app* clock delay f))
-  ([app clock delay f] (queue/enqueue! app clock delay #(update- app (:state app) f nil))))
+  [app :- App
+   delay :- s/Int
+   f] (queue/enqueue! app clock delay #(update- app (:state app) f nil)))
 
 (defn update!
   "Enqueues an update to happen immediately.
 
    OpenGL calls cannot be made within the callback."
-  ([f] (update! app/*app* f))
-  ([app f] (delay! (clock app) 0 f)))
+  [app f] (delay! (clock app) 0 f))
 
-(defn enqueue!
+(s/defn enqueue!
   "Enqueues an update to happen before the next frame is rendered.
 
    OpenGL calls in this callback are okay."
-  ([f] (enqueue! app/*app* f))
-  ([app f] (event/subscribe-once! app :enqueue #(update- app (:state app) f nil))))
+  [app :- App
+   ;; TODO: Figure out the method signature
+   ;; Looking at update-, it seems to be a straight
+   ;; State => State transformation
+   ;; Which is going to be specific to each App
+   f]
+  ;; This is going to blow up w/out app extending the EventHandler protocol
+  ;; TODO: Figure out a better approach. First idea is to move this into
+  ;; that namespace
+  (event/subscribe-once! app :enqueue #(update- app (:state app) f nil)))
 
 (defn repaint!
   "Forces the application to repaint."
-  ([] (repaint! app/*app*))
-  ([app] (controller/invalidated! app true)))
+  [app]
+  ;; As far as I can tell, there's a glfwRefresh handler that will almost
+  ;; never get called on modern window managers.
+  ;; This sort of thing makes sense for apps which are mostly static...
+  ;; but that doesn't really fit with this library at all.
+  ;; Then again, this is perfectly in keeping with more traditional apps,
+  ;; like, say, clocks that only need to update once a second or forms
+  ;; where data is being entered.
+  ;; It might be a very friendly optimization to the rest of the system
+  ;; to check for the dirty flag at the top of the rendering loop of
+  ;; visible windows and only do the drawing if it's set.
+  ;; It's definitely something to consider and tinker with.
+  (controller/invalidated! app true))
 
 (defn frequency! [hz]
   "Updates the update frequency of a periodic update.
@@ -298,7 +317,9 @@
 ;;;
 
 (defmacro with-gl
-  "Creates a valid OpenGL context within the scope."
+  "Creates a valid OpenGL context within the scope.
+
+  TODO: This seems like it should probably go away"
   [& body]
   `(slate/with-slate
      (context/with-context nil
@@ -374,16 +395,24 @@
 ;;; Obsolete, at least in their current forms
 
 (defn pause!
-  []
-  (controller/pause! (:controller (app))))
+  [app]
+  (controller/pause! (:controller app)))
 
 (defn speed!
   [app speed]
-  (time/speed! (:clock app) speed))
+  ;; This really seems like something to do at
+  ;; a higher level.
+  ;; It's easy to mix up the distinctions between what might be
+  ;; happening in a full-blown App vs. what's happening in that
+  ;; App's individual windows.
+  ;; This needs some hammock time.
+  (comment (time/speed! (:clock app) speed))
+  (throw (ex-info "Need to think about this"
+                  {:not-implemented "It would be very useful to be able to dynamically alter speed at the REPL to see what's going on"})))
 
-(s/defn title!
-  [s :- s/Str]
-  (window/title! (:window (app)) s))
+(comment (s/defn title!
+           [s :- s/Str]
+           (window/title! (:window (app)) s)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
@@ -396,29 +425,29 @@
   [app event args]
   ((-> app :callbacks event) args))
 
-(defn start
+(comment (defn start
   "Starts a window from scratch, or from a closed state.
-   Supported callbacks are:
-   :update         [[delta time] state]
-   :display        [[delta time] state]
-   :reshape        [[x y width height] state]
-   :init           [state]
-   :close          [state]
-   :mouse-drag     [[[dx dy] [x y]] button state]
-   :mouse-move     [[[dx dy] [x y]] state]
-   :mouse-up       [[x y] button state]
-   :mouse-click    [[x y] button state]
-   :mouse-down     [[x y] button state]
-   :key-type       [key state]
-   :key-press      [key state]
-   :key-release    [key state]"
+  Supported callbacks are:
+  :update         [[delta time] state]
+  :display        [[delta time] state]
+  :reshape        [[x y width height] state]
+  :init           [state]
+  :close          [state]
+  :mouse-drag     [[[dx dy] [x y]] button state]
+  :mouse-move     [[[dx dy] [x y]] state]
+  :mouse-up       [[x y] button state]
+  :mouse-click    [[x y] button state]
+  :mouse-down     [[x y] button state]
+  :key-type       [key state]
+  :key-press      [key state]
+  :key-release    [key state]"
   ([callbacks]
-     (start callbacks {}))
+   (start callbacks {}))
   ([callbacks state]
    (throw (ex-info "Trying to do this creates circular dependencies" {:obsolete "Use Components instead"}))
    (comment (let [default-system (system/init {:callbacks callbacks, :main-loop loop/basic-loop, :state state, :threading :single})]
               (component/start default-system)))
-   (println "Returning from graphics thread creation")))
+   (println "Returning from graphics thread creation"))))
 
 (defn ctor
   [defaults]

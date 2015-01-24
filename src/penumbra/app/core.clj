@@ -9,9 +9,9 @@
 (ns penumbra.app.core)
 
 ;; TODO: These next 2 dynamic vars need to go away
-(def ^:dynamic *app*
+(comment (def ^:dynamic *app*
   "Current application."
-  nil)
+  nil))
 
 (def ^:dynamic *hz*
   "Refresh rate of update-loop"
@@ -31,6 +31,12 @@
 ;; print function (which I'd rather not get into just now,
 ;; though it's probably purty simple)
 
-(defmacro with-app [app & body]
-  `(binding [*app* ~app]
-     ~@body))
+;; Actually, this basic idea is pretty tempting.
+;; Create a system here and now.
+;; Wipe it away when the associated windows exit.
+;; Except that the caller must have created that system and is
+;; passing it in, so this is really a Common Lisp approach
+;; that doesn't seem to match well with functional programming
+(comment (defmacro with-app [app & body]
+           `(binding [*app* ~app]
+              ~@body)))

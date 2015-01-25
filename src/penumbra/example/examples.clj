@@ -48,6 +48,7 @@
 (deftest run
   (let [app (demo/wrapper)]
     (run-test "Mandelbrot" mandelbrot)
+    (run-test "Convolution" convolution)
     (testing "Async"
       (async/start))
     (testing "Switch"
@@ -78,8 +79,6 @@
       (asteroids/start))
     (testing "Pong"
       (pong/start))
-    (testing "Convolution"
-      (convolution/start))
     (testing "Brian's Brains"
       (brian/start))
     (testing "Fluid"

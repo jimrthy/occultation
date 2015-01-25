@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -7,30 +7,45 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.example.gpgpu.convolution
-  (:use [penumbra opengl compute])
-  (:require [penumbra.app :as app]))
+  (:use [penumbra compute])
+  (:require [penumbra.app :as app]
+            [penumbra.opengl :as gl]
+            [schema.core :as s])
+  (:import [penumbra.app App]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+;;; I *think* the tex is a texture handle. Which should be
+;;; a short int. I *think*
+(def state {(s/optional-key :tex) s/Any})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internal
 
 (defn draw-rect [x y w h]
-  (with-disabled :texture-rectangle
-    (draw-quads
-     (vertex x y)
-     (vertex (+ x w) y)
-     (vertex (+ x w) (+ y h))
-     (vertex x (+ y h)))))
+  (gl/with-disabled :texture-rectangle
+    (gl/draw-quads
+     (gl/vertex x y)
+     (gl/vertex (+ x w) y)
+     (gl/vertex (+ x w) (+ y h))
+     (gl/vertex x (+ y h)))))
 
 (defn reset-image [tex]
-  (render-to-texture tex
-    (clear)                 
-    (with-projection (ortho-view 0 2 0 2 -1 1)
+  (gl/render-to-texture tex
+    (gl/clear)                 
+    (gl/with-projection (gl/ortho-view 0 2 0 2 -1 1)
       (dotimes [_ 100]
-        (apply color (take 3 (repeatedly rand)))
+        (apply gl/color (take 3 (repeatedly rand)))
         (apply draw-rect (take 4 (repeatedly rand))))))
   (app/repaint!)
   tex)
 
-(defn init [state]
+(s/defn init
+  [app :- App
+   state]
 
-  (app/title! "Convolution")
+  (app/title! app "Convolution")
 
   (defmap detect-edges
     (let [a (float4 0.0)
@@ -53,11 +68,12 @@
                 0 0 0
                 -1 -2 -1])))
 
-  (enable :texture-rectangle)
+  (gl/enable :texture-rectangle)
   (assoc state
-    :tex (reset-image (create-byte-texture :texture-rectangle 512 512))))
+    :tex (reset-image (gl/create-byte-texture :texture-rectangle 512 512))))
 
-(defn key-press [key state]
+(s/defn key-press :- state
+  [key state :- state]
   (let [tex (:tex state)]
     (cond
      (= key " ")
@@ -65,15 +81,18 @@
        :tex (reset-image tex))
      (= key :return)
      (assoc state
-       :tex (detect-edges tex [filter-1] [filter-2])
-       )
+       :tex (detect-edges tex [filter-1] [filter-2]))
      :else
      state)))
 
 (defn display [_ state]
-  (blit (:tex state)))
+  (gl/blit (:tex state)))
 
-(defn start []
-  (app/start
-   {:display display, :key-press key-press, :init init}
-   {}))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
+
+(defn callbacks []
+  {:display display, :key-press key-press, :init init})
+
+(defn initial-state []
+  {})

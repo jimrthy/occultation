@@ -122,7 +122,7 @@
 
 (def iterations-per-frame 60)
 
-(s/defn update :- state
+(s/defn app-update :- state
   [_ state :- state]
   (let [max-iterations (* 20 (Math/pow (:zoom state) 0.5))]
     (if (< (:iterations state) max-iterations)
@@ -153,7 +153,7 @@
 ;;; Public
 
 (defn callbacks []
-  {:init init, :reshape reshape, :update update, :display display, :mouse-down mouse-down, :key-press key-press})
+  {:init init, :reshape reshape, :update app-update, :display display, :mouse-down mouse-down, :key-press key-press})
 
 (defn initial-state []
   (reset-fractal {:upper-left [-2.0 1.0] :lower-right [1.0 -1.0] :zoom 1 :offset [-0.5 0]}))

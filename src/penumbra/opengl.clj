@@ -18,7 +18,8 @@
             [penumbra.opengl.shader :as shader]
             [penumbra.opengl.teapot :as t]
             [penumbra.opengl.texture :as tex]
-            [penumbra.utils :refer (defn-memo defmacro-)])
+            [penumbra.utils :refer (defn-memo defmacro-)]
+            [schema.core :as s])
   (:import (org.lwjgl BufferUtils)
            (java.io File ByteArrayOutputStream ByteArrayInputStream)
            (javax.imageio ImageIO)
@@ -316,12 +317,14 @@
 (defmacro with-texture-transform [transform & body]
   `(tex/with-texture-transform (fn [] ~transform) (fn [] ~@body)))
 
-(defn create-byte-texture
-  "Creates a texture with pixel format :unsigned-byte.
-   Valid targets include [:texture-rectangle :texture-2d]."
+(def legal-texture-targets (s/enum :texture-rectangle :texture-2d))
+(s/defn create-byte-texture   ; Q: What does this return?
+  "Creates a texture with pixel format :unsigned-byte."
   ([w h]
      (create-byte-texture :texture-2d w h))
-  ([target w h]
+  ([target :- legal-texture-targets
+    w :- s/Int
+    h :- s/Int]
      (create-texture
       :target target
       :dim [w h]

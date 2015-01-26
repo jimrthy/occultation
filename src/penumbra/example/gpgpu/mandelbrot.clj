@@ -7,9 +7,10 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.example.gpgpu.mandelbrot
-  (:use [penumbra opengl compute])
+  (:use [penumbra compute])
   (:require [penumbra.app :as app]
             [penumbra.data :as data]
+            [penumbra.opengl :as gl]
             [schema.core :as s])
   (:import [penumbra.app App]))
 
@@ -108,7 +109,7 @@
   [[x y w h]
    state :- state]
   ;; TODO: This isn't going to fly
-  (ortho-view 0 1 1 0 -1 1)
+  (gl/ortho-view 0 1 1 0 -1 1)
   (update-bounds
     (assoc state
            :dim {:x w :y h})))
@@ -126,7 +127,7 @@
   [_ state :- state]
   (let [max-iterations (* 20 (Math/pow (:zoom state) 0.5))]
     (if (< (:iterations state) max-iterations)
-      (with-frame-buffer
+      (gl/with-frame-buffer
         (let [ul      (:upper-left state)
               lr      (:lower-right state)
               iters   (+ (:iterations state) iterations-per-frame)
@@ -147,7 +148,7 @@
   [_ state :- state]
   (when (:repaint state)
     (app/repaint!))
-  (blit! (:image state)))
+  (gl/blit! (:image state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public

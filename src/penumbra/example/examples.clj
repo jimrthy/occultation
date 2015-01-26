@@ -49,6 +49,7 @@
   (let [app (demo/wrapper)]
     (run-test "Mandelbrot" mandelbrot)
     (run-test "Convolution" convolution)
+    (run-test "Brian's Brains" brian)
     (testing "Async"
       (async/start))
     (testing "Switch"
@@ -79,8 +80,6 @@
       (asteroids/start))
     (testing "Pong"
       (pong/start))
-    (testing "Brian's Brains"
-      (brian/start))
     (testing "Fluid"
       (fluid/start))
     (testing "N Body"

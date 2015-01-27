@@ -79,10 +79,10 @@
   (rotate (:rot-y state) 0 1 0)
   ((:pyramid state)))
 
-(defn start []
-  (app/start
-   {:display display, :mouse-drag mouse-drag, :reshape reshape, :init init}
-   {:rot-x 0, :rot-y 0, :pyramid nil}))
+(defn callbacks []
+  {:display display, :mouse-drag mouse-drag, :reshape reshape, :init init})
 
+(defn initial-state []
+  {:rot-x 0, :rot-y 0, :pyramid nil})
 
 

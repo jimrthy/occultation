@@ -15,5 +15,7 @@
     (text/write-to-screen "hello world" 0 0)
     (text/write-to-screen "hello world" 0 100)))
 
-(defn start []
-  (app/start {:display display} {}))
+(defn callbacks []
+  {:display display})
+(defn initial-state [] {})
+

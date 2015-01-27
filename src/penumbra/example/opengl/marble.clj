@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -11,6 +11,7 @@
         [penumbra.opengl core]
         [cantor])
   (:require [penumbra.app :as app]
+            [penumbra.app.window :as window]
             [penumbra.text :as text]
             [penumbra.data :as data]))
 
@@ -84,18 +85,21 @@
     " " (reset-random-texture state)
     state))
 
-(defn display [[delta time] state]
+(defn display [app [delta time] state]
   (rotate (:rot-x state) 1 0 0)
   (rotate (:rot-y state) 0 1 0)
   (color 1 0 0)
-  (blit!
-    (with-pipeline marble [{:octaves (:octaves state)} (app/size) [(:tex state)]]
-     (clear)
-     ;;(text/write-to-screen (str (int (/ 1 delta)) "fps") 0 0)  
-     ((:teapot state)))))
+  (let [size (window/size (:window app))]
+    (blit!
+     (with-pipeline marble [{:octaves (:octaves state)} size [(:tex state)]]
+       (clear)
+       ;;(text/write-to-screen (str (int (/ 1 delta)) "fps") 0 0)  
+       ((:teapot state))))))
 
-(defn start []
-  (app/start
-   {:reshape reshape, :display display, :init init, :mouse-drag mouse-drag, :key-press key-press}
-   {:rot-x 0, :rot-y 0}))
+(defn callbacks []
+  {:reshape reshape, :display display, :init init, :mouse-drag mouse-drag, :key-press key-press})
+
+(defn initial-state []
+  {:rot-x 0, :rot-y 0})
+
 

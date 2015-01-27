@@ -325,6 +325,13 @@
     (comment (throw (RuntimeException. "Deprecated")))
     true))
 
+(s/defn size :- {:width s/Int, :height s/Int}
+  [window :- Window]
+  (let [w-buffer (IntBuffer/allocate 1)
+        h-buffer (IntBuffer/allocate 2)]
+    (GLFW/glfwGetWindowSize (:handle window) w-buffer h-buffer)
+    {:width (.get w-buffer), :height (.get h-buffer)}))
+
 (s/defn title!
   [window :- Window
    title :- s/Str]

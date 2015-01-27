@@ -8,7 +8,8 @@
 
 (ns penumbra.example.opengl.shadow
   (:use [penumbra opengl compute])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app :as app]
+            [penumbra.app.window :as window]))
 
 (defn init [state]
 
@@ -37,16 +38,18 @@
     :rot-x (+ (:rot-x state) dy)
     :rot-y (+ (:rot-y state) dx)))
 
-(defn display [_ state]
+(defn display [app _ state]
   (translate 0 0 -5)
   (rotate (:rot-x state) 1 0 0)
   (rotate (:rot-y state) 0 1 0)
   (let [draw-scene (:scene state)]
     (blit!
-     (with-pipeline depth [(app/size)]
+     (with-pipeline depth [(-> app :window window/size)]
        (clear)
        (draw-scene)))))
 
-(defn start []
-  (app/start {:init init, :reshape reshape, :mouse-drag mouse-drag, :display display}
-             {:rot-x 0, :rot-y 0}))
+(defn callbacks []
+  {:init init, :reshape reshape, :mouse-drag mouse-drag, :display display})
+(defn initial-state []
+  {:rot-x 0, :rot-y 0})
+

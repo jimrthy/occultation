@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -11,11 +11,26 @@
         [penumbra.opengl core]
         [cantor])
   (:require [penumbra.app :as app]
+            [penumbra.app.window :as window]
             [penumbra.text :as text]
             [penumbra.opengl.texture :as tex]
-            [penumbra.data :as data]))
+            [penumbra.data :as data]
+            [schema.core :as s]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+(def state {:view-density s/Bool
+            :velocity s/Any
+            :density s/Any})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Named Constants
 
 (def dim [400 300])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internal
 
 (defn textured-quad []
   (draw-quads
@@ -40,18 +55,20 @@
   (def particle-quad
     (create-display-list (textured-quad))))
 
-(defn overdraw! [tex locs size [r g b]]
+(defn overdraw!
+  [app tex locs size [r g b]]
   (render-to-texture
    tex
    (with-enabled [:blend :texture-2d]
      (with-texture particle-tex
        (with-projection (ortho-view 0 1 1 0 -1 1)
          (color r g b (/ 1 (count locs)))
-         (doseq [loc locs]
-           (push-matrix
-            (translate (div loc (apply vec2 (app/size))))
-            (scale size size)
-            (particle-quad))))))))
+         (let [{:keys [width height]} (window/size (:window app))]
+           (doseq [loc locs]
+             (push-matrix
+              (translate (div loc (apply vec2 width height)))
+              (scale size size)
+              (particle-quad)))))))))
 
 (defmacro def-fluid-map [name & body]
   `(defmap ~name
@@ -65,7 +82,6 @@
 (defn init [state]
 
   (app/title! "Fluid")
-  (app/vsync! true)
 
   (init-particles)
   (blend-func :src-alpha :one-minus-src-alpha)
@@ -141,7 +157,10 @@
       :density density 
       :velocity (normalize-velocity velocity))))
 
-(defn mouse-move [[dx dy] [x y] state]
+(s/defn mouse-move
+  [app    ; TODO: This really won't fly
+   [dx dy] [x y]
+   state :- state]
   (when (:velocity state)
     (let [finish (vec2 x y)
           start (sub finish (vec2 dx dy))
@@ -202,6 +221,11 @@
   (text/write-to-screen (str (int (/ 1 dt)) "fps") 0 0)
   (app/repaint!))
 
-(defn start []
-  (app/start {:display display, :update update, :mouse-move mouse-move, :key-press key-press, :reshape reshape, :init init}
-             {:view-density true}))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+(defn callbacks []
+  {:display display, :update update, :mouse-move mouse-move, :key-press key-press, :reshape reshape, :init init})
+
+(defn initial-state []
+  {:view-density true})

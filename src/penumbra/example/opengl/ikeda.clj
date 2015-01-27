@@ -56,8 +56,10 @@
         (doseq [[x y] (take (inc i) s)]
           (vertex x y 0)))))
   (app/repaint!))
- 
-(defn start []
-  (app/start
-          {:reshape reshape :mouse-drag mouse-drag :update update :display display}
-          {:rot-x 0 :rot-y 0 :iteration 0 :initial-paths (gen-paths 0.905 num-paths) :u 0.905}))
+
+(defn initial-state []
+  {:rot-x 0 :rot-y 0 :iteration 0 :initial-paths (gen-paths 0.905 num-paths) :u 0.905})
+
+(defn callbacks []
+  {:reshape reshape :mouse-drag mouse-drag :update update :display display})
+

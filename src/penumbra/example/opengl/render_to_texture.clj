@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -9,6 +9,7 @@
 (ns penumbra.example.opengl.render-to-texture
   (:use [penumbra opengl])
   (:require [penumbra.app :as app]
+            [penumbra.app.window :as window]
             [penumbra.data :as data]))
 
 (defn textured-quad []
@@ -62,20 +63,20 @@
   (scale 1 1 -1)
   (translate 0 0 2))
 
-(defn mouse-drag [[dx dy] [x y] button state]
-  (let [[w h] (app/size)]
-    (if (< x (int (/ w 2)))
+(defn mouse-drag [app [dx dy] [x y] button state]
+  (let [{:keys [width height]} (window/size (:window app))]
+    (if (< x (int (/ width 2)))
       (let [[lx ly] (:left state)]
         (assoc state :left [(- lx dy) (- ly dx)]))
       (let [[rx ry] (:right state)]
         (assoc state :right [(- rx dy) (- ry dx)])))))
 
-(defn display [[delta time] state]
+(defn display [app [delta time] state]
   (let [[lx ly] (:left state)
         [rx ry] (:right state)
         checkers (:checkers state)
         view (:view state)
-        [w h] (app/size)]
+        {:keys [width height]} (window/size (:window app))]
 
     (light 0
        :position [-1 -1 1 0])
@@ -93,16 +94,16 @@
 
     (clear 0 0 0)
 
-    (with-projection (frustum-view 90. (double (/ w 2.0 h)) 0.1 10.)
+    (with-projection (frustum-view 90. (double (/ width 2.0 height)) 0.1 10.)
       ;;render the checkered cube to the window
       (with-texture checkers
-        (with-viewport [0 0 (/ w 2.0) h]
+        (with-viewport [0 0 (/ width 2.0) height]
           (push-matrix
            (rotate lx 1 0 0) (rotate ly 0 1 0)
            (textured-cube))))
       ;;render a cube with the checkered cube texture
       (with-texture view
-        (with-viewport [(/ w 2.0) 0 (/ w 2.0) h]
+        (with-viewport [(/ width 2.0) 0 (/ width 2.0) height]
           (push-matrix
            (rotate rx 1 0 0) (rotate ry 0 1 0)
            (textured-cube)))))
@@ -114,10 +115,8 @@
          (load-identity)
          (draw-lines (vertex 0.5 0) (vertex 0.5 1)))))))
 
-(defn start []
-  (app/start
-   {:display display, :mouse-drag mouse-drag, :reshape reshape, :init init}
-   {:left [0 0], :right [0 0], :checkers nil, :view nil}))
+(defn callbacks []
+  {:display display, :mouse-drag mouse-drag, :reshape reshape, :init init})
 
-
-
+(defn initial-state []
+  {:left [0 0], :right [0 0], :checkers nil, :view nil})

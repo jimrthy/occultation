@@ -8,6 +8,7 @@
 (ns penumbra.example.opengl.squares
   (:use [penumbra opengl compute])
   (:require [penumbra.app :as app]
+            [penumbra.app.window :as window]
             [penumbra.data :as data]))
 
 (defn init [state]
@@ -28,14 +29,17 @@
   (ortho-view -1 1 -1 1 -1 1)
   state)
 
-(defn display [_ state]
+(defn display [app _ state]
   (scale 0.9 0.9)
   (blit!
-   (with-pipeline shader [(app/size) [(:tex state)]]
+   (with-pipeline shader [(-> app :window window/size) [(:tex state)]]
      (clear)
      (draw-quads
       (vertex -1 -1) (vertex 1 -1)
       (vertex  1 1) (vertex -1 1)))))
 
-(defn start []
-  (app/start {:init init, :reshape reshape, :display display} {}))
+(defn callbacks []
+  {:init init, :reshape reshape, :display display})
+
+(defn initial-state [] {})
+

@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -7,14 +7,19 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.example.gpgpu.brians-brain
-  (:use [penumbra opengl compute])
   (:require [penumbra.app :as app]
+            [penumbra.compute :as compute]
+            [penumbra.data :as data]
+            [penumbra.opengl :as gl]
             [penumbra.text :as text]
-            [penumbra.data :as data]))
+            [schema.core :as s]))
+
+;; Q: What *is* :tex?
+(def state {:tex s/Any})
 
 (defn init-kernels []
 
-  (defmap update-automata
+  (compute/defmap update-automata
     (let [cell (.a (float4 %))
           neighbors 0.]
       (when (= 0. cell)
@@ -26,19 +31,23 @@
        (= 2. neighbors) (color4 1. 1. 1. 1.)
        :else            (color4 0. 0. 0. 0.))))
   
-  (defmap colorize
+  (compute/defmap colorize
     (color3 (.xyz %))))
 
-(defn create-random-texture [w h]
-  (wrap
+(s/defn create-random-texture
+  [w :- s/Int
+   h :- s/Int]
+  (compute/wrap
    (take (* w h) (repeatedly #(float (rand-int 2))))
    [w h]))
 
-(defn init [state]
+(s/defn init :- state
+  [state :- state]
   (app/title! "Brian's Brain")
-  (app/vsync! false)
+  ;; Q: What's the point to disabling this?
+  (comment (app/vsync! false))
   (init-kernels)
-  (enable :texture-rectangle)
+  (gl/enable :texture-rectangle)
   state)
 
 (defn reshape [[x y w h] state]
@@ -52,15 +61,18 @@
 (defn update [_ state]
   (update-in state [:tex] #(update-automata %)))
 
-(defn display [[delta _] state]
-  (blit! (colorize (:tex state)))
+(s/defn display
+  [[delta _]
+   state :- state]
+  (gl/blit! (colorize (:tex state)))
   (text/write-to-screen (format "%d fps" (int (/ 1 delta))) 0 0)  
   (app/repaint!))
 
-(defn start []
-  (app/start
-   {:init init, :reshape reshape, :display display, :update update, :key-press key-press}
-   {}))
+(defn callbacks []
+  {:init init, :reshape reshape, :display display, :update update, :key-press key-press})
+
+(defn initial-state []
+  {})
 
 (defn benchmark []
   (app/with-gl

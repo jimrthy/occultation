@@ -37,5 +37,7 @@
         (draw-points (apply vertex p)))))
   (blit (:tex state)))
 
-(defn start []
-  (app/start {:display display :mouse-drag mouse-drag :reshape reshape :init init} {}))
+(defn callbacks []
+  {:display display :mouse-drag mouse-drag :reshape reshape :init init})
+
+(defn initial-state [] {})

@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -10,7 +10,13 @@
   (:use [penumbra opengl]
 	    [cantor])
   (:require [penumbra.app :as app]
-            [penumbra.text :as text]))
+            [penumbra.text :as text]
+            [schema.core :as s]))
+
+(def state
+  {:gear s/Any  ; actually, this is a display list
+   :rot-x s/Int
+   :rot-y s/Int})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Gear building functions
@@ -86,7 +92,7 @@
 
 (defn init [state]
   (app/title! "Gears")
-  (app/vsync! false)
+  (comment (app/vsync! false))
   (enable :depth-test)
   (enable :lighting)
   (enable :light0)
@@ -101,7 +107,8 @@
   (light 0 :position [1 1 1 0])
   state)
 
-(defn mouse-drag [[dx dy] _ button state]
+(s/defn mouse-drag :- state
+  [[dx dy] _ button state :- state]
   (assoc state
     :rot-x (+ (:rot-x state) dy)
     :rot-y (+ (:rot-y state) dx)))
@@ -124,8 +131,10 @@
 (defn display-proxy [& args]
   (apply display args))
 
-(defn start []
-  (app/start
-   {:reshape reshape, :display display-proxy, :init init, :mouse-drag mouse-drag, :key-press key-press}
-   {:rot-x 0, :rot-y 0, :gear nil}))
+(defn callbacks []
+  {:reshape reshape, :display display-proxy, :init init, :mouse-drag mouse-drag, :key-press key-press})
+
+(defn initial-state []
+  {:rot-x 0, :rot-y 0, :gear nil})
+
 

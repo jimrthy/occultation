@@ -13,15 +13,15 @@
    [penumbra.example.app.async :as async]
    [penumbra.example.app.switch :as switch]
    [penumbra.example.app.nested :as nested]
-   [penumbra.example.opengl.text :as text]
-   [penumbra.example.opengl.gears :as gears]
-   [penumbra.example.opengl.sierpinski :as sierpinski]
-   [penumbra.example.opengl.render-to-texture :as rtt]
-   [penumbra.example.opengl.marble :as marble]
-   [penumbra.example.opengl.shadow :as shadow]
-   [penumbra.example.opengl.squares :as squares]
    [penumbra.example.opengl.accumulate :as accumulate]
    [penumbra.example.opengl.async :as gl-async]
+   [penumbra.example.opengl.gears :as gears]
+   [penumbra.example.opengl.marble :as marble]
+   [penumbra.example.opengl.render-to-texture :as rtt]
+   [penumbra.example.opengl.shadow :as shadow]
+   [penumbra.example.opengl.sierpinski :as sierpinski]
+   [penumbra.example.opengl.squares :as squares]
+   [penumbra.example.opengl.text :as text]
    [penumbra.example.game.tetris :as tetris]
    [penumbra.example.game.asteroids :as asteroids]
    [penumbra.example.game.pong :as pong]
@@ -47,31 +47,24 @@
 
 (deftest run
   (let [app (demo/wrapper)]
-    (run-test "Mandelbrot" mandelbrot)
-    (run-test "Convolution" convolution)
+    (run-test "Accumulate" accumulate)
+    (run-test "Async" async)
     (run-test "Brian's Brains" brian)
-    (testing "Async"
-      (async/start))
+    (run-test "Convolution" convolution)
+    (run-test "Fluid" fluid)
+    (run-test "Gears" gears)
+    (run-test "Mandelbrot" mandelbrot)
+    (run-test "Marble" marble)
+    (run-test "N Body" nbody)
+    (run-test "Render-to-Texture" rtt)
+    (run-test "Shadow" shadow)
+    (run-test "Sierpinski" sierpinski)
+    (run-test "Squares" squares)
+    (run-test "Text" text)
     (testing "Switch"
       (switch/start))
     (testing "Nested"
       (nested/start))
-    (testing "Text"
-      (text/start))
-    (testing "Gears"
-      (gears/start))
-    (testing "Sierpinski"
-      (sierpinski/start))
-    (testing "Render-to-Texture"
-      (rtt/start))
-    (testing "Marble"
-      (marble/start))
-    (testing "Shadow"
-      (shadow/start))
-    (testing "Squares"
-      (squares/start))
-    (testing "Accumulate"
-      (accumulate/start))
     (testing "Async"
       (gl-async/start))
     (testing "Tetris"
@@ -79,8 +72,4 @@
     (testing "Asteroids"
       (asteroids/start))
     (testing "Pong"
-      (pong/start))
-    (testing "Fluid"
-      (fluid/start))
-    (testing "N Body"
-      (nbody/start))))
+      (pong/start))))

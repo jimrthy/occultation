@@ -60,9 +60,8 @@
     (run-test "Shadow" shadow)
     (run-test "Sierpinski" sierpinski)
     (run-test "Squares" squares)
+    (run-test "Switch" switch)
     (run-test "Text" text)
-    (testing "Switch"
-      (switch/start))
     (testing "Nested"
       (nested/start))
     (testing "Async"

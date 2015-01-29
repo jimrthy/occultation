@@ -354,6 +354,16 @@
   []
   (GLFW/glfwGetPrimaryMonitor))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
+
+(s/defn close!
+  ([window :- Window
+    should? :- s/Bool]
+   (GLFW/glfwSetWindowShouldClose (:handle window) should?))
+  ([window :- Window]
+   (close! window true)))
+
 (s/defn ctor :- Window
   [{:keys [handle hints position]}]
   (let [params (cond-> {}

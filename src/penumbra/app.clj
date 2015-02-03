@@ -49,8 +49,10 @@
      window]
   clojure.lang.IDeref
   (deref
+   [_]
+   ;; Doc strings aren't really legal
    "Q: Do we really want to do this?"
-   [_] @state)
+   @state)
 
   component/Lifecycle
   (start

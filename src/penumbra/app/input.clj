@@ -24,15 +24,44 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
-;;; Q: Is there anything for this to do, realistically?
-(defrecord Input []
+;; Q: Does a reference to the App really make sense here?
+;; It seems like the Window component would be more
+;; appropriate...either way, it also seems like we're
+;; risking circular dependencies.
+(defrecord Input [app buttons keys]
   component/Lifecycle
   (start
     [this]
+    ;; Keyboard used to be something imported from LWJGL
+    ;; TODO: Where should this functionality come from now?
+    (if (Keyboard/isCreated)
+      (do
+        ;; Q: Do these make sense here?
+        (Keyboard/create)
+        (Mouse/create)))
+    (let [keys (or keys (ref {}))
+          buttons (or buttons (ref {}))]
+      (dosync
+       ;; Signal that all keys and mouse buttons have
+       ;; been released.
+       ;; This seems like a questionable choice, but
+       ;; it matches current functionality.
+       (doseq [key (keys @keys)]
+         (event/publish! app :key-release key))
+       (doseq [[b loc] @buttons]
+         (event/publish! app :mouse-up loc b)
+         (event/publish! app :mouse-click loc b))
+       (ref-set keys {})
+       (ref-set buttons {})))
     this)
+
   (stop
     [this]
-    this))
+    (Keyboard/destroy)
+    (Mouse/destroy)
+    (assoc this
+           :keys (ref {})
+           :buttons (ref {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -258,24 +287,7 @@ This gets called when a key is pressed, repeated, or released"
                  buttons (ref {})]
              (reify
                InputHandler
-               (init! [_]
-                 (if (Keyboard/isCreated)
-                   (do
-                     (Keyboard/create)
-                     (Mouse/create))
-                   (dosync
-                    (doseq [key (keys @keys)]
-                      (event/publish! app :key-release key))
-                    (doseq [[b loc] @buttons]
-                      (event/publish! app :mouse-up loc b)
-                      (event/publish! app :mouse-click loc b))
-                    (ref-set keys {})
-                    (ref-set buttons {}))))
-               (destroy! [_]
-                 (Keyboard/destroy)
-                 (Mouse/destroy))
-               (key-repeat! [_ flag] (Keyboard/enableRepeatEvents flag))
-               (key-pressed? [_ key] ((-> @keys vals set) key))
+               
                (button-pressed? [_ button] (@buttons button))
                (mouse-location [_] (let [[w h] (window/size app)]
                                      [(Mouse/getX) (- h (Mouse/getY))]))
@@ -284,6 +296,16 @@ This gets called when a key is pressed, repeated, or released"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
+
+(defn key-repeat!
+  "Q: Isn't this actually per window?
+  If so, it seems like it probably doesn't belong in here."
+  [_ flag]
+  (Keyboard/enableRepeatEvents flag))
+
+(defn key-pressed?
+  [component key]
+  ((-> component :keys deref vals set) key))
 
 (defn ctor
   [defaults]

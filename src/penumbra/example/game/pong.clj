@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -9,14 +9,34 @@
 (ns penumbra.example.game.pong
   (:use [penumbra opengl]
         [penumbra.utils])
-  (:require [penumbra [app :as app] [text :as text]]))
+  (:require [com.stuartsierra.component :as component]
+            [penumbra [app :as app] [text :as text]]
+            [schema.core :as s]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+(declare update-opponent-paddle reset-game)
+(s/defrecord Pong [state]
+  component/Lifecycle
+  (start [this]
+         (comment (app/vsync! true))
+         (app/title! "Pong")
+         (app/periodic-update! 2 update-opponent-paddle)
+         (assoc this :state (reset-game state)))
+  (stop [this]
+        (assoc this :state {})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Named Constants
 
 (def ball-width 0.03)
 (def ball-height 0.03)
 (def paddle-width 0.02)
 (def paddle-height 0.15)
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Utilities
 
 (defn abs [x] (Math/abs x))
 
@@ -74,12 +94,13 @@
       :v-right (if (neg? vx) 0 (/ dy dt)))))
 
 (defn update-player-paddle [state]
-  (assoc state
-    :v-left
-    (cond
-     (app/key-pressed? :up) -1
-     (app/key-pressed? :down) 1
-     :else 0)))
+  (throw (ex-info "Not Implemented" state))
+  (comment (assoc state
+                  :v-left
+                  (cond
+                    (app/key-pressed? :up) -1
+                    (app/key-pressed? :down) 1
+                    :else 0))))
 
 (defn update-paddle [dt v pos]
   (min (- 1 paddle-height) (max 0 (+ pos (* dt v)))))
@@ -102,17 +123,11 @@
     :left 0.5, :v-left 0.0
     :right 0.5, :v-right 0.0))
 
-(defn init [state]
-  (app/vsync! true)
-  (app/title! "Pong")
-  (app/periodic-update! 2 update-opponent-paddle)
-  (reset-game state))
-
 (defn reshape [[x y w h] state]
   (ortho-view 0 1 1 0 -1 1)
   state)
 
-(defn update [[delta _] state]
+(defn game-update [[delta _] state]
   (-> state
       (update-player-paddle)
       (assoc :left (update-paddle delta (:v-left state) (:left state)))
@@ -125,7 +140,20 @@
   (draw-paddle (- 0.99 paddle-width) (:right state))
   (app/repaint!))
 
+(defn system []
+  (let [base-system (component/system-map
+                     :app (app/ctor {})
+                     :game (map->Pong {})
+                     :callbacks {:display display,
+                                 :reshape reshape,
+                                 :update game-update}
+                     :state {})
+        dependency-map {:app [:callbacks :game]
+                        :game :state}]
+    (with-meta
+      (component/system-using base-system dependency-map)
+      {:dependencies dependency-map})))
+
 (defn start []
-  (app/start
-   {:display display, :reshape reshape, :update update, :init init}
-   {}))
+  (let [sys (system)]
+    (component/start sys)))

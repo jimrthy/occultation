@@ -303,21 +303,13 @@ This gets called when a key is pressed, repeated, or released"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
-(defn key-repeat!
+(defn key-repeat-obsoleted!
   "Q: Isn't this actually per window?
   If so, it seems like it probably doesn't belong in here.
   A: It's worse. Key events are always repeated"
   [_ flag]
   (throw (ex-info "Obsolete" {}))
   (comment (Keyboard/enableRepeatEvents flag)))
-
-(defn key-pressed?
-  [component key]
-  ;; It's tempting to used glfwGetKey here.
-  ;; That feels wrong, but it might simplify things.
-  ;; More importantly...it's silly to duplicate the keymap
-  ;; that glfw is already maintaining.
-  ((-> component :keys deref vals set) key))
 
 (defn ctor
   [defaults]

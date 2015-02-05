@@ -13,7 +13,7 @@
                  [org.clojure/clojure "1.7.0-alpha4"]
                  [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
                  [org.clojure/math.combinatorics "0.0.2"]
-                 [prismatic/schema "0.3.3"]
+                 [prismatic/schema "0.3.7"]
                  [slick-util "1.0.0"]]   ; for things like image and font loading. Status seems questionable
   :profiles {:dev {:source-paths ["dev"]
                    :dependencies [[org.clojure/tools.namespace "0.2.4"]

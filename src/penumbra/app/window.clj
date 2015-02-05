@@ -8,6 +8,9 @@
 
 (ns penumbra.app.window
   (:require [com.stuartsierra.component :as component]
+            [penumbra.app.core :as app]
+            [penumbra.app.event :as event]
+            [penumbra.app.utilities :as util]
             [penumbra.constants :as K]
             [penumbra.opengl
              [texture :as texture]
@@ -16,8 +19,6 @@
             [penumbra.opengl :refer :all]
             [penumbra.opengl.core :refer (gl-false)]
             [penumbra.text :as text]
-            [penumbra.app.event :as event]
-            [penumbra.app.core :as app]
             [schema.core :as s])
   (:import [org.lwjgl.glfw GLFW GLFWvidmode]
            [org.lwjgl.system MemoryUtil]
@@ -363,6 +364,18 @@
    (GLFW/glfwSetWindowShouldClose (:handle window) should?))
   ([window :- Window]
    (close! window true)))
+
+(s/defn key-pressed? :- s/Bool
+  "This really seems to belong in the input namespace, but that's the wrong Component"
+  [component :- Window
+   key :- (s/either s/Keyword java.lang.Character)]
+  ;; It's tempting to used glfwGetKey here.
+  ;; That feels wrong, but it might simplify things.
+  ;; More importantly...it's silly to duplicate the keymap
+  ;; that glfw is already maintaining.
+  (comment ((-> component :keys deref vals set) key))
+  (let [current-state (GLFW/glfwGetKey (:handle component) (util/translate-us-token-to-key-code key))]
+    (= current-state GLFW/GLFW_PRESS)))
 
 (s/defn ctor :- Window
   [{:keys [handle hints position]}]

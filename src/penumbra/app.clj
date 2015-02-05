@@ -155,6 +155,9 @@
 ;;; Since the InputHandler protocol is gone.
 ;;; So...how do I want to move forward?
 (comment (auto-extend App `input/InputHandler @(:input-handler this)))
+;; These next 2 also need to go away, but eliminating them breaks
+;; other major dependencies.
+(println "Eliminate these ASAP after getting into a REPL")
 (auto-extend App `queue/QueueHash @(:queue this))
 (auto-extend App `event/EventHandler (:event-handler this))
 (comment (auto-extend App `controller/Controller (:controller this)))
@@ -482,6 +485,8 @@
   (let [current-stack-atom (:state-stack app)
         current-state (first @current-stack-atom)]
     (swap! current-stack-atom #(drop 1 %))
+    ;; TODO: If there's no current state left, should exit.
+    ;; Or something along those lines
     current-state))
 
 (defn ctor

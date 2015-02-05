@@ -1,9 +1,8 @@
 (ns penumbra.example.wiki.triangle2
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]))
 
 (defn init [state]
-  (app/vsync! true)
   state)
 
 (defn reshape [[x y width height] state]
@@ -17,9 +16,10 @@
   (draw-triangles
    (color 1 0 0) (vertex 1 0)
    (color 0 1 0) (vertex -1 0)
-   (color 0 0 1) (vertex 0 1.86))
-  (app/repaint!))
+   (color 0 0 1) (vertex 0 1.86)))
 
-(app/start 
-  {:display display, :reshape reshape, :init init} 
-  {})
+(defn start []
+  (app/start
+   "Triangle 2"
+   {:display display, :reshape reshape, :init init} 
+   {}))

@@ -31,23 +31,28 @@
    [penumbra.example.gpgpu.fluid :as fluid]
    [penumbra.example.gpgpu.n-body :as nbody]))
 
+;; Vital TODO:
+;; Check what this actually expands to
 (defmacro run-test
   [title ns-sym]
-  ;; TODO: put ns-sym into a gensym so it doesn't
-  ;; get eval'd twice
-  `(testing ~title
-      (let [callbacks (~ns-sym/callbacks)
-            state (~ns-sym/initial-state)
-            done (promise)
-            test-app (-> app
-                         (assoc-in :state state)
-                         (assoc-in :callbacks callbacks)
-                         (assoc-in :done done))]
-        @done)))
+  (let [aka (gensym)]
+    `(testing ~title
+       (let [~aka '~ns-sym
+             cb-fun# (ns-resolve ~aka '~'callbacks)
+             init-fun# (ns-resolve ~aka '~'initial-state)
+             callbacks# (cb-fun#)
+             state# (init-fun#)
+             done# (promise)
+             _# (-> '~'app
+                    (assoc-in :state state#)
+                    (assoc-in :callbacks callbacks#)
+                    (assoc-in :done done#))]
+         @done#))))
 
 (deftest run
   (let [app (demo/wrapper)]
     (run-test "Accumulate" accumulate)
+    (run-test "Asteroids" asteroids)
     (run-test "Async" async)
     (run-test "Brian's Brains" brian)
     (run-test "Convolution" convolution)
@@ -56,19 +61,12 @@
     (run-test "Mandelbrot" mandelbrot)
     (run-test "Marble" marble)
     (run-test "N Body" nbody)
+    (run-test "Nested" nested)
+    (run-test "Pong" pong)
     (run-test "Render-to-Texture" rtt)
     (run-test "Shadow" shadow)
     (run-test "Sierpinski" sierpinski)
     (run-test "Squares" squares)
     (run-test "Switch" switch)
-    (run-test "Text" text)
-    (testing "Nested"
-      (nested/start))
-    (testing "Async"
-      (gl-async/start))
-    (testing "Tetris"
-      (tetris/start))
-    (testing "Asteroids"
-      (asteroids/start))
-    (testing "Pong"
-      (pong/start))))
+    (run-test "Tetris" tetris)
+    (run-test "Text" text)))

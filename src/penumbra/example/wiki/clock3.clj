@@ -1,6 +1,7 @@
 (ns penumbra.example.wiki.clock3
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app :as app]
+            [penumbra.app.minimal :as minimal]))
 
 (defn draw-clock [hour minute second]
   (push-matrix
@@ -41,6 +42,8 @@
 (defn display [[delta time] state]
   (draw-clock (:hour state) (:minute state) (:second state)))
 
-(app/start
-  {:display display, :reshape reshape, :init init}
-  {:hour 0 :minute 0 :second 0})
+(defn start []
+  (minimal/start
+   "Clock 3"
+   {:display display, :reshape reshape, :init init}
+   {:hour 0 :minute 0 :second 0}))

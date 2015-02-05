@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -8,7 +8,7 @@
 
 (ns penumbra.example.wiki.shader2
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]))
 
 (defn init [state]
   (def program (create-program
@@ -39,4 +39,5 @@
      (attribute :alpha 0.5) (vertex 0 1)
      (attribute :alpha 1.) (vertex 1 1))))
 
-(app/start {:init init, :reshape reshape, :display display} {})
+(defn start []
+  (app/start "Shader 2" {:init init, :reshape reshape, :display display} {}))

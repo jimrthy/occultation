@@ -25,7 +25,6 @@
     (draw-lines (vertex 0 0) (vertex 0 -1)))))
 
 (defn init [state]
-  (app/vsync! true)
   state)
 
 (defn reshape [[x y w h] state]
@@ -45,12 +44,9 @@
   (draw-clock (:hour state) (:minute state) (:second state))
   (app/repaint!))
 
-;; This is convenient for being able to just run the namespace, but it's
-;; breaking basic compilation.
-;; With no real hint about the actual problem.
-(comment) (let [system (system/init {:callbacks
-                                     {:display display, :reshape reshape, :update update-, :init init}
-                                     :state {:hour 0 :minute 0 :second 0}})
-                (windowed-system (update-in system [:app :window])
-                                 )]
-            (component/start system))
+(defn start
+  []
+  (let [system (system/init {:callbacks
+                             {:display display, :reshape reshape, :update update-, :init init}
+                             :state {:hour 0 :minute 0 :second 0}})]
+    (component/start system)))

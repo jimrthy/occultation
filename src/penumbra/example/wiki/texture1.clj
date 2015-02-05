@@ -1,6 +1,6 @@
 (ns penumbra.example.wiki.texture1
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]))
 
 (defn init [state]
   (enable :texture-2d)
@@ -12,4 +12,4 @@
   (blit (:texture state)))
 
 (defn start []
-  (app/start {:init init :display display} {}))
+  (app/start "Texture" {:init init :display display} {}))

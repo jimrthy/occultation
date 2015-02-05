@@ -75,6 +75,8 @@
   component/Lifecycle
   (start
    [this]
+   ;; TODO: Switch to supplying a default instead
+   (assert title "Must name your window")
    (GLFW/glfwDefaultWindowHints)
    ;; TODO: Default to invisible window that's convenient for moving
    (when (seq hints)
@@ -87,14 +89,19 @@
          mon (or monitor MemoryUtil/NULL)
          shared-handle (or share MemoryUtil/NULL)
          hwnd (or handle
-                  (GLFW/glfwCreateWindow w h title mon shared-handle))]
-     (GLFW/glfwSetWindowPos handle x y)
-     (GLFW/glfwMakeContextCurrent handle)   ; This is how it all gets wired together
+                  (do
+                    (println "Creating a window with: " {:position position,
+                                                         :title title
+                                                         :monitor mon
+                                                         :shared shared-handle})
+                    (GLFW/glfwCreateWindow w h title mon shared-handle)))]
+     (GLFW/glfwSetWindowPos hwnd x y)
+     (GLFW/glfwMakeContextCurrent hwnd)   ; This is how it all gets wired together
      ;; I suppose this next value's debatable...but why would anyone ever not
      ;; want it?
      (GLFW/glfwSwapInterval 1)
      (when (:visible hints)
-       (GLFW/glfwShowWindow handle))
+       (GLFW/glfwShowWindow hwnd))
      (into this {:handle hwnd
                  :position {:left x, :top y,
                             :width w, :height h}
@@ -378,9 +385,10 @@
     (= current-state GLFW/GLFW_PRESS)))
 
 (s/defn ctor :- Window
-  [{:keys [handle hints position]}]
+  [{:keys [handle hints position title]}]
   (let [params (cond-> {}
                  handle (assoc :handle handle)
                  hints (assoc :hints hints)
-                 position (assoc :position position))]
+                 position (assoc :position position)
+                 title (assoc :title title))]
     (map->Window params)))

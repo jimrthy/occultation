@@ -1,6 +1,6 @@
 (ns penumbra.example.wiki.triangle1
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]))
 
 (defn reshape [[x y width height] state]
   (frustum-view 60.0 (/ (double width) height) 1.0 100.0)
@@ -14,6 +14,8 @@
     (color 0 1 0) (vertex -1 0)
     (color 0 0 1) (vertex 0 1.86)))
 
-(app/start 
-  {:display display, :reshape reshape} 
-  {})
+(defn start []
+  (app/start
+   "Triangle 1"
+   {:display display, :reshape reshape} 
+   {}))

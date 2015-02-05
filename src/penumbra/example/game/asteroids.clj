@@ -427,7 +427,7 @@
    (= key "3") (app/speed! 2)
    :else state))
 
-(defn update [[dt time] state]
+(defn update-frame [[dt time] state]
   (assoc state
          :spaceship (update-spaceship dt state)))
 
@@ -449,6 +449,6 @@
   (let [component (map->Asteroids {:callbacks {:reshape reshape,
                                                :init init,
                                                :key-press key-press,
-                                               :update update,
+                                               :update update-frame,
                                                :display display}
                                    :dim (vec2 10 10)})]))

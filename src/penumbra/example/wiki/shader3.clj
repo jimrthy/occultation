@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -8,7 +8,8 @@
 
 (ns penumbra.example.wiki.shader3
   (:use [penumbra opengl compute])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]
+            [penumbra.app.window :as window]))
 
 (defn init [state]
   
@@ -27,14 +28,15 @@
   (frustum-view 45 (/ w h) 0.1 10)
   state)
 
-(defn display [_ state]
+(defn display [app state]
   (translate -0.5 -0.5 -5)
   (blit!
-   (with-pipeline program [{:tint [1. 1. 0.]} (app/size)]
+   (with-pipeline program [{:tint [1. 1. 0.]} (window/size (:window app))]
      (clear)
      (draw-triangles
       (attribute :alpha 0.) (vertex 0 0)
       (attribute :alpha 0.5) (vertex 0 1)
       (attribute :alpha 1.) (vertex 1 1)))))
 
-(defn start [] (app/start {:init init, :reshape reshape, :display display} {}))
+(defn start []
+  (app/start "Shader 3" {:init init, :reshape reshape, :display display} {}))

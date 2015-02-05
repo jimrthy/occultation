@@ -10,7 +10,7 @@
                  ;; (c.f. java/penumbra/Natives.java)
                  #_[kephale/lwjgl-natives "2.9.0"]
                  #_[kephale/lwjgl-util "2.9.0"]
-                 [org.clojure/clojure "1.7.0-alpha4"]
+                 [org.clojure/clojure "1.7.0-alpha5"]
                  [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
                  [org.clojure/math.combinatorics "0.0.2"]
                  [prismatic/schema "0.3.7"]

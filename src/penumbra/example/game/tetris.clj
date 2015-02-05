@@ -12,7 +12,7 @@
         [penumbra.utils :only (indexed)])
   (:require [com.stuartsierra.component :as component]
             [penumbra.app :as app]
-            [penumbra.app.input :as input]
+            [penumbra.app.window :as window]
             [schema.core :as s]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,21 +24,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
-(declare gen-tetra)
+(declare gen-tetra initialize-state)
 (s/defrecord GameState [blocks offset tetra next-tetra]
   component/Lifecycle
   (start [this]
          "Clears out the pit, and generates first two shapes."
-         (assoc this
-                :blocks ((apply vector (take height (repeat (apply vector (take width (repeat nil)))))))
-                :offset [(/ width 2) 0]
-                :tetra  (gen-tetra)
-                :next-tetra (gen-tetra)))
+         (assoc this (initialize-state)))
   (stop [this]
         this))
 
-(declare rectangle)
-(s/defrecord Tetris [bordered-rectangle input state]
+(declare descend rectangle)
+(s/defrecord Tetris [bordered-rectangle state]
  component/Lifecycle
  (start [this]
         (app/title! "Tetris")
@@ -47,15 +43,10 @@
         (app/periodic-update!
          2
          (fn [state]
-           (if (input/key-pressed? (:input this) :down)
+           (if (window/key-pressed? (:input this) :down)
              (app/frequency! 10)
              (app/frequency! 2))
            (descend state)))
-        ;; The intent behind this seems totally wrong now.
-        ;; In lwjgl3, key events always repeat. The key
-        ;; callback event takes that parameter as an action,
-        ;; while glfwGetKey doesn't distinguish.
-        (app/key-repeat! true)
         (let [outline (create-display-list
                        (draw-quads (rectangle))
                        (color 0 0 0)
@@ -75,6 +66,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Internal Helpers
+
+(defn initialize-state
+  []
+  {:blocks ((apply vector (take height (repeat (apply vector (take width (repeat nil)))))))
+   :offset [(/ width 2) 0]
+   :tetra  (gen-tetra)
+   :next-tetra (gen-tetra)})
 
 (defn rotate* [clockwise [x y]]
   (let [k (if clockwise -1 1)]
@@ -279,15 +277,15 @@
   (draw-tetra (:next-tetra state) [13 5]))
 
 (defn system []
-  (let [base (component/base-system-map :app (app/ctor {})
-                                        :callbacks {:display display, :reshape reshape, :key-press key-press}
-                                        :input (input/ctor {})
-                                        :state (initialize-state {})
-                                        :tetris (map->Tetris {}))
+  (let [base (component/system-map :app (app/ctor {})
+                                   :callbacks {:display display, :reshape reshape, :key-press key-press}
+                                   ;; :input (input/ctor {})
+                                   :state (initialize-state {})
+                                   :tetris (map->Tetris {}))
         dependencies {:app [:callbacks :tetris]
-                      :tetris [:input :state]}]))
+                      :tetris [:state]}]
+    (with-meta (component/system-using base dependencies)
+      {:dependencies dependencies})))
 
 (defn start []
   (component/start (system)))
-
-

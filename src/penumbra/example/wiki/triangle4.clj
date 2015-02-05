@@ -1,9 +1,8 @@
 (ns penumbra.example.wiki.triangle4
   (:use [penumbra.opengl])
-  (:require [penumbra.app :as app]))
+  (:require [penumbra.app.minimal :as app]))
 
 (defn init [state]
-  (app/vsync! true)
   state)
 
 (defn reshape [[x y width height] state]
@@ -11,7 +10,7 @@
   (load-identity)
   state)
   
-(defn update [[delta time] state]
+(defn update-frame [[delta time] state]
   (update-in state [:rot-y] #(rem (+ % (* 90 delta)) 360)))
 
 (defn display [[delta time] state]
@@ -21,8 +20,10 @@
    (color 1 0 0) (vertex 1 0)
    (color 0 1 0) (vertex -1 0)
    (color 0 0 1) (vertex 0 1.86))
-  (app/repaint!))
+  #_(app/repaint!))
 
-(app/start 
-  {:display display, :reshape reshape, :init init, :update update} 
-  {:rot-y 0})
+(defn start []
+  (app/start
+   "Triangle 4"
+   {:display display, :reshape reshape, :init init, :update update-frame}
+   {:rot-y 0}))

@@ -12,6 +12,7 @@
         [penumbra.utils :only (indexed)])
   (:require [com.stuartsierra.component :as component]
             [penumbra.app :as app]
+            [penumbra.app.input :as input]
             [schema.core :as s]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,7 +38,7 @@
         this))
 
 (declare rectangle)
-(s/defrecord Tetris [:bordered-rectangle]
+(s/defrecord Tetris [bordered-rectangle input state]
  component/Lifecycle
  (start [this]
         (app/title! "Tetris")
@@ -46,10 +47,14 @@
         (app/periodic-update!
          2
          (fn [state]
-           (if (input/key-pressed? :down)
+           (if (input/key-pressed? (:input this) :down)
              (app/frequency! 10)
              (app/frequency! 2))
            (descend state)))
+        ;; The intent behind this seems totally wrong now.
+        ;; In lwjgl3, key events always repeat. The key
+        ;; callback event takes that parameter as an action,
+        ;; while glfwGetKey doesn't distinguish.
         (app/key-repeat! true)
         (let [outline (create-display-list
                        (draw-quads (rectangle))
@@ -276,10 +281,11 @@
 (defn system []
   (let [base (component/base-system-map :app (app/ctor {})
                                         :callbacks {:display display, :reshape reshape, :key-press key-press}
+                                        :input (input/ctor {})
                                         :state (initialize-state {})
                                         :tetris (map->Tetris {}))
         dependencies {:app [:callbacks :tetris]
-                      :tetris :state}]))
+                      :tetris [:input :state]}]))
 
 (defn start []
   (component/start (system)))

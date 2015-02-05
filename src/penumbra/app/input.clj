@@ -33,12 +33,18 @@
   (start
     [this]
     ;; Keyboard used to be something imported from LWJGL
-    ;; TODO: Where should this functionality come from now?
-    (if (Keyboard/isCreated)
-      (do
-        ;; Q: Do these make sense here?
-        (Keyboard/create)
-        (Mouse/create)))
+    ;; Q: Where should this functionality come from now?
+    ;; A: As far as I can tell, it looks like this has just
+    ;; disappeared.
+    ;; Actually, according to
+    ;; https://github.com/LWJGL/lwjgl3/issues/13, the entire
+    ;; Keyboard class is gone.
+    ;; Q: What, if anything, should replace this?
+    (comment (if (Keyboard/isCreated)
+               (do
+                 ;; Q: Do these make sense here?
+                 (Keyboard/create)
+                 (Mouse/create))))
     (let [keys (or keys (ref {}))
           buttons (or buttons (ref {}))]
       (dosync
@@ -57,8 +63,8 @@
 
   (stop
     [this]
-    (Keyboard/destroy)
-    (Mouse/destroy)
+    (comment (Keyboard/destroy)
+             (Mouse/destroy))
     (assoc this
            :keys (ref {})
            :buttons (ref {}))))
@@ -299,12 +305,18 @@ This gets called when a key is pressed, repeated, or released"
 
 (defn key-repeat!
   "Q: Isn't this actually per window?
-  If so, it seems like it probably doesn't belong in here."
+  If so, it seems like it probably doesn't belong in here.
+  A: It's worse. Key events are always repeated"
   [_ flag]
-  (Keyboard/enableRepeatEvents flag))
+  (throw (ex-info "Obsolete" {}))
+  (comment (Keyboard/enableRepeatEvents flag)))
 
 (defn key-pressed?
   [component key]
+  ;; It's tempting to used glfwGetKey here.
+  ;; That feels wrong, but it might simplify things.
+  ;; More importantly...it's silly to duplicate the keymap
+  ;; that glfw is already maintaining.
   ((-> component :keys deref vals set) key))
 
 (defn ctor

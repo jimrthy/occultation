@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -13,7 +13,7 @@
 (declare callbacks)
 (declare start)
  
-(defn key-press [key state]
+(defn key-press [app key state]
   (cond
    (= key " ") (do
                  (start (update-in state [:count] inc))

@@ -254,6 +254,9 @@
           theta (+ 180 (:theta ship) offset)
           particles (:particles state)
           position (add (:position ship) (cartesian (polar2 theta 0.3)))
+          ;; TODO: Typehint this to get rid of the reflection warnings below
+          ;; Then again, I should probably look into what polar is actually
+          ;; returning
           velocity (polar (add (:velocity ship) (cartesian theta)))]
       (assoc state
         :particles (conj particles
@@ -397,7 +400,7 @@
   [state :- world-state]
   (app/title! "Asteroids")
   (comment (app/vsync! true))
-  (app/key-repeat! false)
+  (comment (app/key-repeat! false))
   (init-asteroids)
   (init-particles)
   (init-spaceship)

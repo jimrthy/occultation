@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -7,12 +7,69 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.example.game.tetris
-  (:use [penumbra opengl])
-  (:require [penumbra.app :as app])
-  (:use [penumbra.utils :only (indexed)])
-  (:use [clojure.pprint]))
+  (:use [clojure.pprint]
+        [penumbra opengl]
+        [penumbra.utils :only (indexed)])
+  (:require [com.stuartsierra.component :as component]
+            [penumbra.app :as app]
+            [schema.core :as s]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Named Constants
+
+(def width 10)
+(def height 20)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+(declare gen-tetra)
+(s/defrecord GameState [blocks offset tetra next-tetra]
+  component/Lifecycle
+  (start [this]
+         "Clears out the pit, and generates first two shapes."
+         (assoc this
+                :blocks ((apply vector (take height (repeat (apply vector (take width (repeat nil)))))))
+                :offset [(/ width 2) 0]
+                :tetra  (gen-tetra)
+                :next-tetra (gen-tetra)))
+  (stop [this]
+        this))
+
+(declare rectangle)
+(s/defrecord Tetris [:bordered-rectangle]
+ component/Lifecycle
+ (start [this]
+        (app/title! "Tetris")
+        ;; TODO: this next part doesn't really seem to make
+        ;; much sense any more
+        (app/periodic-update!
+         2
+         (fn [state]
+           (if (input/key-pressed? :down)
+             (app/frequency! 10)
+             (app/frequency! 2))
+           (descend state)))
+        (app/key-repeat! true)
+        (let [outline (create-display-list
+                       (draw-quads (rectangle))
+                       (color 0 0 0)
+                       (draw-line-loop (rectangle))
+                       (color 1 1 1))]
+          (assoc this
+                 :bordered-rectangle outline)))
+ (stop [this]
+       (assoc this
+              ;; The original was creating this during every
+              ;; init.
+              ;; It seems a little silly, but...go ahead
+              ;; and run with that version.
+              ;; Q: Do I need to do anything to delete
+              ;; the display list?
+              :bordered-rectangle nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internal Helpers
 
 (defn rotate* [clockwise [x y]]
   (let [k (if clockwise -1 1)]
@@ -77,22 +134,11 @@
         [0.5 0.5 0.5]
         two-way]]))
 
-;;;
-
-(def width 10)
-(def height 20)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Game Rules
 
 (defn gen-tetra []
   (nth tetras (rand-int (count tetras))))
-
-(defn initialize-state
-  "Clears out the pit, and generates first two shapes."
-  [state]
-  (assoc state
-    :blocks (apply vector (take height (repeat (apply vector (take width (repeat nil))))))
-    :offset [(/ width 2) 0]
-    :tetra  (gen-tetra)
-    :next-tetra (gen-tetra)))
 
 (defn next-block
   "Advances next-tetra to tetra, and generates new next-tetra."
@@ -166,27 +212,6 @@
      (rotate 90 0 0 1)
      (vertex 0.5 0.5))))
 
-(defn init [state]
-
-  (app/title! "Tetris")
-
-  (def bordered-rectangle
-       (create-display-list
-        (draw-quads (rectangle))
-        (color 0 0 0)
-        (draw-line-loop (rectangle))
-        (color 1 1 1)))
-
-  (app/periodic-update!
-   2
-   (fn [state]
-     (if (app/key-pressed? :down)
-       (app/frequency! 10)
-       (app/frequency! 2))
-     (descend state)))
-  (app/key-repeat! true)
-  state)
-
 (defn reshape [[x y w h] state]
   (let [aspect (/ (float w) h)
         height (if (> 1 aspect) (/ 1.0 aspect) 1)
@@ -215,12 +240,14 @@
    :else
    state))
 
-(defn draw-bordered-block [col [x y]]
+(s/defn draw-bordered-block
+  [component :- Tetris
+   col [x y]]
   (when (<= 0 y)
     (apply color col)
     (push-matrix
      (translate x y)
-     (call-display-list bordered-rectangle))))
+     (call-display-list (:bordered-rectangle component)))))
 
 (defn draw-tetra [tetra offset]
   (doseq [block (map #(translate* offset %) (:shape tetra))]
@@ -246,9 +273,15 @@
   ;;draw next shape
   (draw-tetra (:next-tetra state) [13 5]))
 
+(defn system []
+  (let [base (component/base-system-map :app (app/ctor {})
+                                        :callbacks {:display display, :reshape reshape, :key-press key-press}
+                                        :state (initialize-state {})
+                                        :tetris (map->Tetris {}))
+        dependencies {:app [:callbacks :tetris]
+                      :tetris :state}]))
+
 (defn start []
-  (app/start
-   {:init init, :display display, :reshape reshape, :key-press key-press}
-   (initialize-state {})))
+  (component/start (system)))
 
 

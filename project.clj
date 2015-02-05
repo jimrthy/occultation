@@ -1,7 +1,7 @@
 (defproject phronmophobic/penumbra "0.6.7-SNAPSHOT"
   :license "Eclipse Public License, just like the original."
   :description "An idiomatic wrapper for OpenGL."
-  :dependencies [[com.frereth/lwjgl "3.0.0a1-SNAPSHOT"]
+  :dependencies [[com.frereth/lwjgl "3.0.0a-SNAPSHOT"]
                  [com.stuartsierra/component "0.2.2"]
                  [kephale/cantor "0.4.1"]  ; "high-performance floating point math" -- deprecated
                  ;; TODO: At one point, Zach mentioned that he'd managed

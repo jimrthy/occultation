@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -10,32 +10,71 @@
   (:use [penumbra opengl]
         [penumbra.utils :only (separate)]
         [cantor])
-  (:require [penumbra.app :as app]
+  (:require [com.stuartsierra.component :as component]
+            [penumbra.app :as app]
             [penumbra.text :as text]
             [penumbra.time :as time]
-            [penumbra.data :as data]))
+            [penumbra.data :as data]
+            [schema.core :as s])
+  (:import [clojure.lang Atom]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
 
-(def ^:dynamic *dim* (vec2 10 10))
+(def asteroid-state {:expired? (s/=> s/Bool)
+                     :position s/Any
+                     :radius double
+                     :render (s/=> s/Any)})
 
-(defn wrap
+(def particle-state {:expired? s/Bool
+                     :position s/Any  ; actually a vec2
+                     :radius double
+                     :render (s/=> s/Any)})
+
+(def ship-state  {:birth s/Any
+                  :position s/Any
+                  :radius double
+                  :theta s/Int
+                  :velocity s/Any})
+
+(def world-state {:asteroids [asteroid-state]
+                  :bullets [particle-state]
+                  :keys Atom  ; really a map of which keys are pressed
+                  :spaceship ship-state
+                  :particles [particle-state]})
+
+(declare initialize)
+(defrecord Asteroids [dim callbacks world-state]
+  component/Lifecycle
+  (start [this]
+    (assoc this :world-state (initialize)))
+  (stop [this]
+    (assoc this :world-state {})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internals
+
+(comment (def ^:dynamic *dim* (vec2 10 10)))
+
+(s/defn wrap
   "Makes the position wrap around from right to left, bottom to top"
-  [pos]
-  (sub
-   (map*
-    mod
-    (add pos *dim*)
-    (mul *dim* 2))
-   *dim*))
+  [component :- Asteroids
+   pos]
+  (let [dim (:dim component)]
+    (sub
+     (map*
+      mod
+      (add pos dim)
+      (mul dim 2))
+     dim)))
 
-(defn expired? [x]
+(s/defn expired? :- s/Bool [x]
   ((:expired? x)))
 
 (defn render [x]
   ((:render x)))
 
-(defn radius [x]
+(s/defn radius [x] :- double
   (if (number? (:radius x))
     (:radius x)
     ((:radius x))))
@@ -54,7 +93,7 @@
   (map #(+ %1 (rand (- %2 %1))) a b))
 
 
-;;asteroids
+;; asteroids
 
 (defn sphere-vertices
   [lod]
@@ -93,7 +132,8 @@
 (defn init-asteroids []
   (def asteroid-meshes (doall (take 20 (repeatedly #(gen-asteroid-geometry 12 100))))))
 
-(defn gen-asteroid [& args]
+(s/defn gen-asteroid :- asteroid-state
+  [& args]
   (let [params (merge
                 {:position (vec2 0 0)
                  :radius 1
@@ -116,7 +156,7 @@
                 (color 0.6 0.6 0.6)
                 (call-display-list asteroid))}))
 
-;;particles
+;;; particles
 
 (defn textured-quad []
   (draw-quads
@@ -126,6 +166,11 @@
    (texture 0 1) (vertex -1 1)))
 
 (defn init-particles []
+  ;; TODO: This seems like it should really be
+  ;; declared at the top level, since that's where
+  ;; it actually happens.
+  ;; It probably depends on where/when this actually gets
+  ;; called.
   (def particle-tex
        (let [[w h] [32 32]
              dim (vec2 w h)
@@ -148,7 +193,8 @@
     (scale radius radius)
     (call-display-list particle-quad)))
 
-(defn gen-particle [& args]
+(s/defn gen-particle :- particle-state
+  [& args]
   (let [params (merge
                 {:position (vec2 0 0)
                  :theta (rand 360)
@@ -169,7 +215,7 @@
                (:radius params)
                (concat (:color params) [(max 0 (- 1 (Math/pow (/ (elapsed) (:lifespan params)) 3)))]))}))
 
-;;spaceship
+;;; spaceship
 
 (defn draw-fuselage [] ;;should be hung in the Louvre
   (color 1 1 1)
@@ -178,6 +224,7 @@
    (vertex 0.4 -0.5) (vertex 0 -0.4) (vertex 0 0.5)))
 
 (defn init-spaceship []
+  ;; TODO: Here's another global to eliminate
   (def fuselage (create-display-list (draw-fuselage))))
 
 (defn fire-bullet [state]
@@ -194,8 +241,14 @@
         :color [0 0 1]
         :lifespan 2)))))
 
-(defn emit-flame [state]
-  (when (app/key-pressed? :up)
+(s/defn key-pressed? :- s/Bool
+  [key-press-state :- {s/Keyword s/Bool}
+   which :- s/Keyword]
+  (which key-press-state))
+
+(s/defn emit-flame
+  [state :- world-state]
+  (when (key-pressed? @(:keys state) :up)
     (let [ship (:spaceship state)
           offset (- (rand 30) 15)
           theta (+ 180 (:theta ship) offset)
@@ -212,15 +265,19 @@
                           :color (rand-color [1 0.5 0.7] [1 1 1])
                           :lifespan (/ (Math/cos (radians (* 3 offset))) 2.5)))))))
 
-(defn update-spaceship [dt ship]
-  (let [p     (:position ship)
+(s/defn update-spaceship :- ship-state
+  [dt :- double
+   state :- world-state]
+  (let [ship (:spaceship state)
+        key-state @(:keys state)
+        p     (:position ship)
         v     (:velocity ship)
         theta (:theta ship)
-        theta (condp (fn [x _] (app/key-pressed? x)) nil
+        theta (condp (fn [x _] (key-pressed? key-state x)) nil
                 :left  (rem (+ theta (* 360 dt)) 360)
                 :right (rem (- theta (* 360 dt)) 360)
                 theta)
-        a     (if (app/key-pressed? :up)
+        a     (if (key-pressed? key-state :up)
                   (mul (cartesian theta) 3)
                   (vec2 0 0))
         v     (add v (mul a dt))
@@ -230,24 +287,24 @@
       :position p
       :velocity v)))
 
-(defn draw-spaceship [ship]
+(s/defn draw-spaceship [ship :- ship-state]
   (push-matrix
     (translate (:position ship))
     (rotate (- (:theta ship) 90) 0 0 1)
     (call-display-list fuselage)))
 
-(defn gen-spaceship []
-  {:position (vec2 0 0)
+(s/defn gen-spaceship :- ship-state []
+  {:birth (app/now)
+   :position (vec2 0 0)
    :radius 0.5
    :velocity (vec2 0 0)
-   :theta 0
-   :birth (app/now)})
+   :theta 0})
 
-;;game state
+;;; game state
 
-(defn reset
+(s/defn reset :- world-state
   "Reset to initial game state."
-  [state]
+  [state :- world-state]
   (assoc state
     :spaceship (gen-spaceship)
     :asteroids (take 4 (repeatedly
@@ -255,20 +312,25 @@
                                pos (cartesian (polar2 theta 2))]
                            (gen-asteroid :position pos :theta theta :speed (rand)))))))
 
-(defn split-asteroid
+(s/defn split-asteroid :- [asteroid-state]
   "Turn asteroid into four sub-asteroids."
-  [asteroid]
-  (when (< 0.25 (radius asteroid))
-    (take 4
-      (repeatedly
-       #(gen-asteroid
-         :position (position asteroid)
-         :radius (/ (radius asteroid) 2)
-         :speed (/ 1.5 (radius asteroid)))))))
+  [asteroid :- asteroid-state]
+  (let [r (radius asteroid)]
+    (when (< 0.25 r)
+      (take 4
+            (repeatedly
+             #(gen-asteroid
+               :position (position asteroid)
+               :radius (/ r 2)
+               :speed (/ 1.5 r)))))))
 
-(defn gen-explosion
+(s/defn gen-explosion :- [particle-state]
   "Create particles within a given color range."
-  [num object [lo-color hi-color] speed]
+  [num :- s/Int
+   object :- {:position s/Any
+              s/Any s/Any}
+   [lo-color hi-color]
+   speed]
   (take num
     (repeatedly
      #(gen-particle
@@ -277,9 +339,10 @@
        :color (rand-color lo-color hi-color)
        :lifespan 2))))
 
-(defn explode-asteroids
+(s/defn explode-asteroids :- world-state
   "Turn asteroid into sub-asteroids and explosion particles."
-  [asteroids state]
+  [asteroids :- [asteroid-state]
+   state :- world-state]
   (assoc state
     :asteroids (concat
                  (:asteroids state)
@@ -288,16 +351,16 @@
                  (:particles state)
                  (mapcat #(gen-explosion (* (radius %) 100) % [[1 0.5 0] [1 1 0.2]] 2) asteroids))))
 
-(defn check-complete
+(s/defn check-complete :- world-state
   "Are all the asteroids gone?"
-  [state]
+  [state :- world-state]
   (if (zero? (count (:asteroids state)))
     (reset state)
     state))
 
-(defn check-ship
+(s/defn check-ship :- world-state
   "Has the ship collided with any asteroids?"
-  [state]
+  [state :- world-state]
   (let [ship (:spaceship state)
         asteroids (:asteroids state)
         [hit missed] (separate #(intersects? ship %) asteroids)]
@@ -308,9 +371,9 @@
         :particles (concat (:particles state) (gen-explosion 300 ship [[0 0 0.6] [0.5 0.5 1]] 7)))
       state)))
 
-(defn check-asteroids
+(s/defn check-asteroids :- world-state
   "Have the asteroids collided with any bullets?"
-  [state]
+  [state :- world-state]
   (let [bullets (:bullets state)
         asteroids (:asteroids state)
         collisions (for [a asteroids, b bullets :when (intersects? a b)] [a b])
@@ -324,15 +387,16 @@
        :bullets (remove expired? bullets)
        :asteroids missed))))
 
-(defn update-collisions [state]
-  (binding [*dim* (:dim state)]
-    (-> state check-asteroids check-ship check-complete)))
+(s/defn update-collisions :- world-state [state :- world-state]
+  (-> state check-asteroids check-ship check-complete))
 
-;;game loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; game loop
 
-(defn init [state]
+(s/defn init :- world-state
+  [state :- world-state]
   (app/title! "Asteroids")
-  (app/vsync! true)
+  (comment (app/vsync! true))
   (app/key-repeat! false)
   (init-asteroids)
   (init-particles)
@@ -361,25 +425,27 @@
    :else state))
 
 (defn update [[dt time] state]
-  (binding [*dim* (:dim state)]
-    (assoc state
-      :spaceship (update-spaceship dt (:spaceship state)))))
+  (assoc state
+         :spaceship (update-spaceship dt state)))
 
 (defn display [[dt time] state]
   (text/write-to-screen (str (int (/ 1 dt)) " fps") 0 0)
-  (binding [*dim* (:dim state)]
-    (with-enabled :texture-2d
-      (with-texture particle-tex
-        (doseq [p (concat (:particles state) (:bullets state))]
-          (render p))))
-    (with-disabled :texture-2d
-      (with-render-mode :wireframe
-        (doseq [a (:asteroids state)]
-          (render a)))
-      (draw-spaceship (:spaceship state)))
-    (app/repaint!)))
+  (with-enabled :texture-2d
+    (with-texture particle-tex
+      (doseq [p (concat (:particles state) (:bullets state))]
+        (render p))))
+  (with-disabled :texture-2d
+    (with-render-mode :wireframe
+      (doseq [a (:asteroids state)]
+        (render a)))
+    (draw-spaceship (:spaceship state)))
+  (app/repaint!))
 
-(defn start []
-  (app/start
-   {:reshape reshape, :init init, :key-press key-press, :update update, :display display}
-   {:dim *dim*}))
+(defn start
+  []
+  (let [component (map->Asteroids {:callbacks {:reshape reshape,
+                                               :init init,
+                                               :key-press key-press,
+                                               :update update,
+                                               :display display}
+                                   :dim (vec2 10 10)})]))

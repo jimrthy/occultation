@@ -27,7 +27,8 @@
             [penumbra.opengl.core :refer :all]
             [penumbra.utils :refer (defmacro-)]
             [schema.core :as s])
-  (:import [org.lwjgl.glfw GLFW GLFWErrorCallback]))
+  (:import [clojure.lang Atom]
+           [org.lwjgl.glfw GLFW GLFWErrorCallback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
@@ -42,23 +43,35 @@
      main-loop
      parent
      queue
-     state
+     state :- Atom
+     state-stack :- Atom
      threading
      window]
   clojure.lang.IDeref
-  (deref [_] @state)
+  (deref
+   [_]
+   ;; Doc strings aren't really legal
+   "Q: Do we really want to do this?"
+   @state)
 
   component/Lifecycle
   (start
    [this]
+   ;; TODO: Probably all of this could/should be handled
+   ;; in the start method of all these individual
+   ;; Components
    (comment (if-let [win (:window this)]
               (window/init! win)
               (throw (ex-info "What do I do without a window?" this))))
    (comment (input/init! this))
    (queue/init! this)
    (controller/resume! controller)
-   (event/publish! this :init)   
-   this)
+   (event/publish! this :init)
+   ;; Seems like it would be silly to start with an initial
+   ;; stack, but it seems sillier to not allow for that
+   ;; possibility
+   (let [initial-state-stack (or state-stack (atom nil))]
+     (assoc this :state-stack initial-state-stack)))
   (stop
    [this]
    (event/publish! this :close)
@@ -67,7 +80,10 @@
    (comment (when-not (:parent this)
               (window/destroy! this)
               (input/destroy! this)))
-   this))
+   ;; It's tempting to leave this in place if it isn't
+   ;; empty, but that seems to violate a huge part of the
+   ;; point to the Component architecture
+   (assoc this :state-stack (atom nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helpers
@@ -452,6 +468,21 @@
    (comment (let [default-system (system/init {:callbacks callbacks, :main-loop loop/basic-loop, :state state, :threading :single})]
               (component/start default-system)))
    (println "Returning from graphics thread creation"))))
+
+(s/defn push-state!
+  "Push a new 'state' onto a stack to switch what's being drawn"
+  [app :- App
+   updated-state]
+  (swap! (:state-stack app) (fn [current]
+                              (concat (list updated-state) current))))
+
+(s/defn pop-state!
+  "Remove the current state from the App's state-stack frame and return it"
+  [app :- App]
+  (let [current-stack-atom (:state-stack app)
+        current-state (first @current-stack-atom)]
+    (swap! current-stack-atom #(drop 1 %))
+    current-state))
 
 (defn ctor
   [defaults]

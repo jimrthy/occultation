@@ -65,35 +65,34 @@
             #(pauseable-loop app outer-fn inner-fn))))
 
 (defn basic-loop
-  [app outer-fn inner-fn]
+  [controller outer-fn inner-fn]
   (comment (with-app app))
-  (let [cntrlr (:controller app)]
-    (try
-      (outer-fn
-       (fn []
-         (loop []
-           (try
-             (inner-fn)
-             ;; TODO: Would probably make a lot of sense to also
-             ;; catch RuntimeException instances. If only to
-             ;; distinguish between the two.
-             ;; And ExceptionInfo, of course
-             (catch Exception e
-               ;; This really shouldn't be a fatal error.
-               ;; At this point, it's equivalent to a BSOD when,
-               ;; at worst, it might be construed as a GPF.
-               (println "Unhandled exception from basic inner loop")
-               (.printStackTrace e)
-               (println e)
-               (println "Where's my stack trace?")
-               (controller/stop! cntrlr :exception)))
-           ;; Seems interesting that pausing exits the loop
-           (when-not (or (controller/paused? cntrlr) (controller/stopped? cntrlr))
-             (recur)))))
-      (catch Exception e
-        (println "Unhandled exception from the outer loop:\n" (class e))
-        (.printStackTrace e)
-        (controller/stop! cntrlr :exception))
-      (finally
-        ;; Not that anything is actually happening
-        (println "Cleaning up the/a messaging loop")))))
+  (try
+    (outer-fn
+     (fn []
+       (loop []
+         (try
+           (inner-fn)
+           ;; TODO: Would probably make a lot of sense to also
+           ;; catch RuntimeException instances. If only to
+           ;; distinguish between the two.
+           ;; And ExceptionInfo, of course
+           (catch Exception e
+             ;; This really shouldn't be a fatal error.
+             ;; At this point, it's equivalent to a BSOD when,
+             ;; at worst, it might be construed as a GPF.
+             (println "Unhandled exception from basic inner loop")
+             (.printStackTrace e)
+             (println e)
+             (println "Where's my stack trace?")
+             (controller/stop! controller :exception)))
+         ;; Seems interesting that pausing exits the loop
+         (when-not (or (controller/paused? controller) (controller/stopped? controller))
+           (recur)))))
+    (catch Exception e
+      (println "Unhandled exception from the outer loop:\n" (class e))
+      (.printStackTrace e)
+      (controller/stop! controller :exception))
+    (finally
+      ;; Not that anything is actually happening
+      (println "Cleaning up the/a messaging loop"))))

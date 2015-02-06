@@ -58,7 +58,7 @@
   (cond
    (= :escape key) (app/pause!)))
 
-(defn update [_ state]
+(defn update-frame [_ state]
   (update-in state [:tex] #(update-automata %)))
 
 (s/defn display
@@ -69,7 +69,7 @@
   (app/repaint!))
 
 (defn callbacks []
-  {:init init, :reshape reshape, :display display, :update update, :key-press key-press})
+  {:init init, :reshape reshape, :display display, :update update-frame, :key-press key-press})
 
 (defn initial-state []
   {})

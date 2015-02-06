@@ -11,24 +11,25 @@
 (defn wall-time []
   (/ (double (System/nanoTime)) (double 1e9)))
 
-(comment (defprotocol Clock
-           (speed! [c speed])))
+;;; TODO: This should either go away or be updated to a Component
+(defprotocol Clock
+  (speed! [c speed]))
 
-(comment (defn clock
-           ([]
-            (clock 0 1))
-           ([offset speed]
-            (let [t0 (wall-time)
-                  lookup (atom #(+ offset (* speed (- % t0))))]
-              (reify
-                clojure.lang.IDeref
-                (deref
-                  [_]
-                  (@lookup (wall-time)))
-                Clock
-                (speed!
-                  [_ speed]
-                  (let [t0 (wall-time)
-                        offset (@lookup t0)]
-                    (reset! lookup #(+ offset (* speed (- % t0)))))
-                  nil))))))
+(defn clock
+  ([]
+   (clock 0 1))
+  ([offset speed]
+   (let [t0 (wall-time)
+         lookup (atom #(+ offset (* speed (- % t0))))]
+     (reify
+       clojure.lang.IDeref
+       (deref
+         [_]
+         (@lookup (wall-time)))
+       Clock
+       (speed!
+         [_ speed]
+         (let [t0 (wall-time)
+               offset (@lookup t0)]
+           (reset! lookup #(+ offset (* speed (- % t0)))))
+         nil)))))

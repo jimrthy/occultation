@@ -48,6 +48,9 @@
 
 (defn init [state]
   (app/title! "Render to Texture")
+  ;; This next line is causing a reflection warning
+  ;; It's trying to call glTexEnvf, in GL11.
+  ;; Q: What's the actual problem?
   (tex-env :texture-env :texture-env-mode :modulate)
   (enable :texture-2d)
   (enable :depth-test)

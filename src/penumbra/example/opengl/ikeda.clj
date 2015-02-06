@@ -38,7 +38,7 @@
   (translate 0 0 -30)
   state)
  
-(defn update [_ state]
+(defn frame-update [_ state]
   (let [i (:iteration state)]
     (if (> i max-iterations)
       (let [[u paths] (gen-paths (:u state) num-paths)]
@@ -61,5 +61,5 @@
   {:rot-x 0 :rot-y 0 :iteration 0 :initial-paths (gen-paths 0.905 num-paths) :u 0.905})
 
 (defn callbacks []
-  {:reshape reshape :mouse-drag mouse-drag :update update :display display})
+  {:reshape reshape :mouse-drag mouse-drag :update frame-update :display display})
 

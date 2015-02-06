@@ -76,37 +76,39 @@
   (start
    [this]
    ;; TODO: Switch to supplying a default instead
-   (assert title "Must name your window")
-   (GLFW/glfwDefaultWindowHints)
-   ;; TODO: Default to invisible window that's convenient for moving
-   (when (seq hints)
-     (customize-window-hints hints))
-   (let [;; TODO: Don't use magic numbers for the defaults
-         x (:left position 0)
-         y (:top position 0)
-         w (:width position 800)
-         h (:height position 600)
-         mon (or monitor MemoryUtil/NULL)
-         shared-handle (or share MemoryUtil/NULL)
-         hwnd (or handle
-                  (do
-                    (println "Creating a window with: " {:position position,
-                                                         :title title
-                                                         :monitor mon
-                                                         :shared shared-handle})
-                    (GLFW/glfwCreateWindow w h title mon shared-handle)))]
-     (GLFW/glfwSetWindowPos hwnd x y)
-     (GLFW/glfwMakeContextCurrent hwnd)   ; This is how it all gets wired together
-     ;; I suppose this next value's debatable...but why would anyone ever not
-     ;; want it?
-     (GLFW/glfwSwapInterval 1)
-     (when (:visible hints)
-       (GLFW/glfwShowWindow hwnd))
-     (into this {:handle hwnd
-                 :position {:left x, :top y,
-                            :width w, :height h}
-                 :monitor mon
-                 :share shared-handle})))
+   (let [^String real-title (or title
+                        "You should name this yourself")]
+     (GLFW/glfwDefaultWindowHints)
+     ;; TODO: Default to invisible window that's convenient for moving
+     (when (seq hints)
+       (customize-window-hints hints))
+     (let [;; TODO: Don't use magic numbers for the defaults
+           x (:left position 0)
+           y (:top position 0)
+           ^Long w (:width position 800)
+           ^Long h (:height position 600)
+           ^Long mon (or monitor MemoryUtil/NULL)
+           ^Long shared-handle (or share MemoryUtil/NULL)
+           hwnd (or handle
+                    (do
+                      (println "Creating a window with: " {:position position,
+                                                           :title real-title
+                                                           :monitor mon
+                                                           :shared shared-handle})
+                      (GLFW/glfwCreateWindow w h real-title mon shared-handle)))]
+       (GLFW/glfwSetWindowPos hwnd x y)
+       (GLFW/glfwMakeContextCurrent hwnd)   ; This is how it all gets wired together
+       ;; I suppose this next value's debatable...but why would anyone ever not
+       ;; want it?
+       (GLFW/glfwSwapInterval 1)
+       (when (:visible hints)
+         (GLFW/glfwShowWindow hwnd))
+       (into this {:handle hwnd
+                   :position {:left x, :top y,
+                              :width w, :height h}
+                   :monitor mon
+                   :share shared-handle
+                   :title real-title}))))
   (stop
    [this]
    (GLFW/glfwDestroyWindow handle)
@@ -335,15 +337,17 @@
 
 (s/defn size :- {:width s/Int, :height s/Int}
   [window :- Window]
-  (let [w-buffer (IntBuffer/allocate 1)
-        h-buffer (IntBuffer/allocate 2)]
-    (GLFW/glfwGetWindowSize (:handle window) w-buffer h-buffer)
+  (let [^IntBuffer w-buffer (IntBuffer/allocate 1)
+        ^IntBuffer h-buffer (IntBuffer/allocate 2)
+        ^Long handle (:handle window)]
+    (GLFW/glfwGetWindowSize handle w-buffer h-buffer)
     {:width (.get w-buffer), :height (.get h-buffer)}))
 
 (s/defn title!
   [window :- Window
-   title :- s/Str]
-  (GLFW/glfwSetWindowTitle (:handle window) title))
+   ^String title]
+  (let [^Long handle (:handle window)]
+    (GLFW/glfwSetWindowTitle handle title)))
 
 
 (s/defn update!

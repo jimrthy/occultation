@@ -190,8 +190,7 @@
         velocity (boundary-conditions velocity)]
     velocity))
 
-(defn update [[dt t] state]
-  
+(defn frame-update [[dt t] state]
   (let [dt dt]
     (let [velocity  (denormalize-velocity (:velocity state))
           velocity  (diffuse {:diff 1.0 :dt dt :decay 0.1} velocity)
@@ -204,8 +203,7 @@
           ]
       (assoc state
         :density density
-        :velocity (normalize-velocity velocity))))
-  )
+        :velocity (normalize-velocity velocity)))))
 
 (defn key-press [key state]
   (when (= key " ")
@@ -225,7 +223,7 @@
 ;;; Schema
 
 (defn callbacks []
-  {:display display, :update update, :mouse-move mouse-move, :key-press key-press, :reshape reshape, :init init})
+  {:display display, :update frame-update, :mouse-move mouse-move, :key-press key-press, :reshape reshape, :init init})
 
 (defn initial-state []
   {:view-density true})

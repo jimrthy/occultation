@@ -13,13 +13,12 @@
             [penumbra
              [time :as time]]
             [penumbra.app
-             [core :as app]
-             [window :as window]
-             [input :as input]
              [controller :as controller]
-             [loop :as loop]
+             [core :as app]
              [event :as event]
-             [queue :as queue]]
+             [loop :as loop]
+             [queue :as queue]
+             [window :as window]]
             [penumbra.opengl
              [context :as context]
              [slate :as slate]]
@@ -28,7 +27,9 @@
             [penumbra.utils :refer (defmacro-)]
             [schema.core :as s])
   (:import [clojure.lang Atom]
-           [org.lwjgl.glfw GLFW GLFWErrorCallback]))
+           [org.lwjgl.glfw GLFW GLFWErrorCallback]
+           [penumbra.app.event EventHandler]
+           [penumbra.app.queue ActionQueue]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
@@ -38,11 +39,11 @@
      callbacks
      clock
      controller
-     event-handler
-     input
+     event-handler :- EventHandler
      main-loop
      parent
-     queue
+     queue :- ActionQueue
+     ;; TODO: These next two need to move elsewhere
      state :- Atom
      state-stack :- Atom
      threading
@@ -57,16 +58,6 @@
   component/Lifecycle
   (start
    [this]
-   ;; TODO: Probably all of this could/should be handled
-   ;; in the start method of all these individual
-   ;; Components
-   (comment (if-let [win (:window this)]
-              (window/init! win)
-              (throw (ex-info "What do I do without a window?" this))))
-   (comment (input/init! this))
-   (queue/init! this)
-   (controller/resume! controller)
-   (event/publish! this :init)
    ;; Seems like it would be silly to start with an initial
    ;; stack, but it seems sillier to not allow for that
    ;; possibility
@@ -74,12 +65,9 @@
      (assoc this :state-stack initial-state-stack)))
   (stop
    [this]
-   (event/publish! this :close)
+   (when event-handler
+     (event/publish! event-handler :close))
    (controller/stop! this)
-   ;; This almost seems to imply that parent is really a bool
-   (comment (when-not (:parent this)
-              (window/destroy! this)
-              (input/destroy! this)))
    ;; It's tempting to leave this in place if it isn't
    ;; empty, but that seems to violate a huge part of the
    ;; point to the Component architecture
@@ -150,19 +138,7 @@
                     callbacks)]
     callbacks))
 
-(comment (auto-extend App `window/Window  @(:window this)))
-;;; This is where the stuffing starts getting ripped out.
-;;; Since the InputHandler protocol is gone.
-;;; So...how do I want to move forward?
-(comment (auto-extend App `input/InputHandler @(:input-handler this)))
-;; These next 2 also need to go away, but eliminating them breaks
-;; other major dependencies.
-(println "Eliminate these ASAP after getting into a REPL")
-(auto-extend App `queue/QueueHash @(:queue this))
-(auto-extend App `event/EventHandler (:event-handler this))
-(comment (auto-extend App `controller/Controller (:controller this)))
-
-(defmethod print-method penumbra.app.App [app writer]
+(defmethod print-method penumbra.app.App [app ^java.io.Writer writer]
   (.write writer "App"))
 
 (comment (defn create
@@ -205,18 +181,6 @@
         (println "App created")
         app)))))
 
-(comment (s/defn app :- App
-           "Returns the current application."
-           []
-           ;; This is vaguely tempting, but it's really just bad practice.
-           ;; Dynamic vars aren't necessarily evil, but they definitely should
-           ;; not be hidden.
-           ;; TODO: I'm leaving it around so I can get something that builds.
-           ;; But, really, this needs to go away.
-           (comment (throw (RuntimeException. "obsolete")))
-           (println "FIXME: Obsolete!")
-           app/*app*))
-
 (defn- transform-import-arglists [protocol name doc arglists]
   (list*
    `defn name
@@ -243,16 +207,6 @@
         (transform-import-arglists protocol name doc arglists))
       (let [imports (set imports)]
         (filter #(imports (:name %)) sigs))))))
-
-(comment (auto-import `window/Window
-                      title! size fullscreen! vsync! display-mode! display-modes))
-
-(comment (auto-import `controller/Controller
-                      stop! pause!))
-
-(comment
-  (auto-import `input/InputHandler
-               key-pressed? button-pressed? key-repeat! mouse-location))
 
 (defn clock
   "Returns the application clock."
@@ -328,10 +282,11 @@
   (controller/invalidated! app true))
 
 (defn frequency! [hz]
-  "Updates the update frequency of a periodic update.
+     "Updates the update frequency of a periodic update.
 
    This can only be called from within the periodic callback.  A frequency of 0 or less will halt the update."
-  (reset! app/*hz* hz))
+     (throw (RuntimeException. "Obsolete"))
+     (reset! app/*hz* hz))
 
 ;;;
 
@@ -374,41 +329,43 @@
 (defn start-single-thread
   "This is being called from start. With an App instance and penumbra.app.loop/basic-loop"
   [app loop-fn]
+  ;; Instead, set this up during component/start
+  (throw (RuntimeException. "Don't handle it this way"))
   ;; FIXME: Is there a reason to do this in a Thread instead
   ;; a future? Except, of course, that the semantics of a future
   ;; have all the wrong implications.
   ;; Don't want to double-guess ztellman, but...at the very least,
   ;; it seems like this should be kicked off using an executor.
   (println "Kicking off a single thread")
-  (.start (Thread. (context/with-context nil
-                     ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
-                     ;; And this doesn't seem worth preferring one over the other.
-                     ;; More importantly: this isn't actually happening
-                     ;; in the background (when it gets called from a REPL, 
-                     ;; control doesn't return until it exits.
-                     ;; FIXME: What am I understanding incorrectly?
-                     (println "Entering a window loop in a background thread\nApp:" app)
-                     (try
-                       (loop-fn
-                        app
-                        (fn [inner-fn]
-                          (doto app
-                            (app/speed! 0)
-                            app/init!
-                            (app/speed! 1))
-                          (inner-fn)
-                          (app/speed! app 0))
-                        ;; Q: Why is this a partial?
-                        ;; A: It's being called in penumbra.app.loop/basic-loop with
-                        ;; no args.
-                        (partial single-thread-main-loop app))
-                       (catch Exception ex
-                         ;; TODO: More error-handling info!
-                         (println "Unhandled exception from the drawing loop:\n" ex)))
-                     (println "Cleaning up after main loop. app:" app)
-                     (when (controller/stopped? app)
-                       (app/destroy! app)))))
-  app)
+  (let [event-thread (future (context/with-context nil
+                               ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
+                               ;; And this doesn't seem worth preferring one over the other.
+                               ;; More importantly: this isn't actually happening
+                               ;; in the background (when it gets called from a REPL, 
+                               ;; control doesn't return until it exits.
+                               ;; FIXME: What am I understanding incorrectly?
+                               (println "Entering a window loop in a background thread\nApp:" app)
+                               (try
+                                 (loop-fn
+                                  app
+                                  (fn [inner-fn]
+                                    (doto app
+                                      (app/speed! 0)
+                                      app/init!
+                                      (app/speed! 1))
+                                    (inner-fn)
+                                    (app/speed! app 0))
+                                  ;; Q: Why is this a partial?
+                                  ;; A: It's being called in penumbra.app.loop/basic-loop with
+                                  ;; no args.
+                                  (partial single-thread-main-loop app))
+                                 (catch Exception ex
+                                   ;; TODO: More error-handling info!
+                                   (println "Unhandled exception from the drawing loop:\n" ex)))
+                               (println "Cleaning up after main loop. app:" app)
+                               (when (controller/stopped? app)
+                                 (app/destroy! app))))]
+    (assoc app :event-loop event-thread)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Obsolete, at least in their current forms

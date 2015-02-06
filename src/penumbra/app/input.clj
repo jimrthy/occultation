@@ -28,7 +28,7 @@
 ;; It seems like the Window component would be more
 ;; appropriate...either way, it also seems like we're
 ;; risking circular dependencies.
-(defrecord Input [app buttons keys]
+(defrecord Input [app buttons]
   component/Lifecycle
   (start
     [this]
@@ -45,35 +45,27 @@
                  ;; Q: Do these make sense here?
                  (Keyboard/create)
                  (Mouse/create))))
-    (let [keys (or keys (ref {}))
-          buttons (or buttons (ref {}))]
+    (let [buttons (or buttons (ref {}))]
       (dosync
        ;; Signal that all keys and mouse buttons have
        ;; been released.
        ;; This seems like a questionable choice, but
        ;; it matches current functionality.
-       (doseq [key (keys @keys)]
-         (event/publish! app :key-release key))
        (doseq [[b loc] @buttons]
          (event/publish! app :mouse-up loc b)
          (event/publish! app :mouse-click loc b))
-       (ref-set keys {})
        (ref-set buttons {})))
     this)
 
   (stop
     [this]
-    (comment (Keyboard/destroy)
-             (Mouse/destroy))
     (assoc this
-           :keys (ref {})
            :buttons (ref {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
 
 (defn take-every-other
-  "There's probably a core built-in for this"
   [seq]
   (->> seq
        (partition 2)
@@ -84,6 +76,7 @@
 
 (defmacro callback-creators
   "FIXME: This desperately needs to be tested.
+  Actually, it should go away/be updated to match the lwjgl3 event system
 
   Create callback wrappers that can be used to associate your callbacks with a given window.
 
@@ -302,14 +295,6 @@ This gets called when a key is pressed, repeated, or released"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
-
-(defn key-repeat-obsoleted!
-  "Q: Isn't this actually per window?
-  If so, it seems like it probably doesn't belong in here.
-  A: It's worse. Key events are always repeated"
-  [_ flag]
-  (throw (ex-info "Obsolete" {}))
-  (comment (Keyboard/enableRepeatEvents flag)))
 
 (defn ctor
   [defaults]

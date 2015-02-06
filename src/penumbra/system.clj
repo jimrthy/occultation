@@ -16,7 +16,10 @@
              [base :as base]
              [configuration :as config]]
             [penumbra.app
+             [controller :as controller]
+             [event :as event]
              [input :as input]
+             [queue :as queue]
              [window :as window]]))
 
 (defn base-map
@@ -24,17 +27,18 @@
   (component/system-map
          :app (app/ctor (select-keys overriding-config-options [:callbacks
                                                                 :clock
-                                                                :controller
                                                                 :event-handler
-                                                                :input
                                                                 :main-loop
                                                                 :parent
                                                                 :queue
                                                                 :state
                                                                 :threading]))
          :base (base/ctor (select-keys overriding-config-options [:error-callback]))
+         :controller (controller/ctor (select-keys overriding-config-options []))
          :done (promise)
+         :event-handler (event/ctor overriding-config-options)
          :input (input/ctor overriding-config-options)
+         :queue (queue/ctor overriding-config-options)
          :window (window/ctor (select-keys overriding-config-options [:hints
                                                                       :position
                                                                       :title]))))
@@ -42,7 +46,12 @@
 (defn dependencies
   [initial]
   (component/system-using initial
-   {:app [:done :input :window]  ; seems wrong to tie an app to a single window
+   {;; seems wrong to tie an app to a single window
+    ;; But that's really all it is...the infrastructure that ties together
+    ;; all the pieces that manage a particular window
+    :app [:controller :done :event-handler :queue :window]
+    :input [:app]
+    :queue [:controller]
     :window [:base]}))
 
 (defn init

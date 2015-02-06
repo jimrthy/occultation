@@ -13,6 +13,8 @@
   "Current application."
   nil))
 
+;; TODO: Refactor this into app.queue
+;; TODO: Make this go away completely
 (def ^:dynamic *hz*
   "Refresh rate of update-loop"
   nil)

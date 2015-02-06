@@ -15,6 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
+(declare resume!)
 ;;; TODO: How many of these actually need to be Ref's?
 (s/defrecord Controller [paused? :- Ref
                          stopped? :- Ref
@@ -24,10 +25,12 @@
   component/Lifecycle
   (start
    [this]
-   (into this {:paused (ref false)
-               :stopped? (ref :initializing)
-               :invalidated? (ref true)
-               :latch (ref (CountDownLatch. 1))}))
+   (let [result
+         (into this {:paused (ref false)
+                     :stopped? (ref :initializing)
+                     :invalidated? (ref true)
+                     :latch (ref (CountDownLatch. 1))})]
+     (resume! result)))
   (stop
    [this]
    (dosync
@@ -117,3 +120,6 @@
   (when-let [l @(:latch component)]
     (.await l)))
 
+(defn ctor
+  [_]
+  (map->Controller {}))

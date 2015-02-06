@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -6,7 +6,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-;; is this even ever used?
+;; Q: is this even ever used?
 
 (ns penumbra.node)
 
@@ -26,5 +26,6 @@
   (update-region [this f] (update-in this [:region] f))
   (update- [this event args] (apply (callbacks event) (list* this args))))
 
-(defn update [node event & args]
+(defn obsolete-update [node event & args]
+  (throw (RuntimeException. "I think this is obsolete"))
   (update- node event args))

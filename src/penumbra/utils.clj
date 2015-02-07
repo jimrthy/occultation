@@ -16,6 +16,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
+(defn close-when!
+  [ch]
+  (when ch (async/close! ch)))
+
 (defmacro defmacro-
   "Same as defmacro but yields a private definition"
   [name & decls]

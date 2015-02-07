@@ -65,7 +65,7 @@
   (set! *warn-on-reflection* true)
   (let [cfg (into (config/defaults) overriding-config-options)]
     ;; TODO: I really need to configure logging...don't I?
-    (-> (base-map overriding-config-options)
+    (-> (base-map cfg)
         (dependencies))))
 
 

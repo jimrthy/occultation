@@ -1,4 +1,4 @@
-(defproject phronmophobic/penumbra "0.6.7-SNAPSHOT"
+(defproject com.frereth/penumbra "0.6.7-SNAPSHOT"
   :license "Eclipse Public License, just like the original."
   :description "An idiomatic wrapper for OpenGL."
   :dependencies [[com.frereth/lwjgl "3.0.0a-SNAPSHOT"]
@@ -11,7 +11,7 @@
                  #_[kephale/lwjgl-natives "2.9.0"]
                  #_[kephale/lwjgl-util "2.9.0"]
                  [org.clojure/clojure "1.7.0-alpha5"]
-                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/math.combinatorics "0.0.2"]
                  [prismatic/schema "0.3.7"]
                  [slick-util "1.0.0"]]   ; for things like image and font loading. Status seems questionable

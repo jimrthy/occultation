@@ -7,41 +7,42 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.system
-  (:require [clojure.core.async :as async]
+  (:require #_[clojure.core.async :as async]
             ;; Q: Debug only??
             #_[clojure.tools.trace :as trace]
             [com.stuartsierra.component :as component]
             [penumbra
-             [app :as app]
              [base :as base]
              [configuration :as config]]
             [penumbra.app
-             [controller :as controller]
-             [event :as event]
-             [input :as input]
-             [queue :as queue]
-             [window :as window]]))
+             #_[controller :as controller]
+             #_[event :as event]
+             #_[input :as input]
+             [manager :as manager]
+             #_[queue :as queue]
+             #_[window :as window]]))
 
 (defn base-map
   [overriding-config-options]
+  (comment :app (app/ctor (select-keys overriding-config-options [:callbacks
+                                                                  :clock
+                                                                  :event-handler
+                                                                  :main-loop
+                                                                  :parent
+                                                                  :queue
+                                                                  :state
+                                                                  :threading]))
+           :controller (controller/ctor (select-keys overriding-config-options []))
+           :input (input/ctor overriding-config-options)
+           :event-handler (event/ctor overriding-config-options)
+           :queue (queue/ctor overriding-config-options)
+           :window (window/ctor (select-keys overriding-config-options [:hints
+                                                                        :position
+                                                                        :title])))
   (component/system-map
-         :app (app/ctor (select-keys overriding-config-options [:callbacks
-                                                                :clock
-                                                                :event-handler
-                                                                :main-loop
-                                                                :parent
-                                                                :queue
-                                                                :state
-                                                                :threading]))
          :base (base/ctor (select-keys overriding-config-options [:error-callback]))
-         :controller (controller/ctor (select-keys overriding-config-options []))
          :done (promise)
-         :event-handler (event/ctor overriding-config-options)
-         :input (input/ctor overriding-config-options)
-         :queue (queue/ctor overriding-config-options)
-         :window (window/ctor (select-keys overriding-config-options [:hints
-                                                                      :position
-                                                                      :title]))))
+         :manager (manager/ctor {})))
 
 (defn dependencies
   [initial]
@@ -49,10 +50,15 @@
    {;; seems wrong to tie an app to a single window
     ;; But that's really all it is...the infrastructure that ties together
     ;; all the pieces that manage a particular window
-    :app [:controller :done :event-handler :queue :window]
-    :input [:app]
-    :queue [:controller]
-    :window [:base]}))
+    ;; It doesn't belong here, though:
+    ;; Some wrapper creates this System, then the AppManager handles
+    ;; all the Apps (tonight I'm calling them Stages)
+    ;;:app [:controller :done :event-handler :queue :window]
+    ;;:input [:app]
+    :manager [:done]
+    ;;:queue [:controller]
+    ;;:window [:base]
+    }))
 
 (defn init
   [overriding-config-options]

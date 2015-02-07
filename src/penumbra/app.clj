@@ -7,7 +7,8 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app
-  (:require [clojure.pprint :refer (pprint)]
+  (:require [clojure.core.async :as async]
+            [clojure.pprint :refer (pprint)]
             [clojure.walk :refer (postwalk-replace)]
             [com.stuartsierra.component :as component]
             [penumbra
@@ -24,21 +25,58 @@
              [slate :as slate]]
             [penumbra.opengl :refer :all]
             [penumbra.opengl.core :refer :all]
-            [penumbra.utils :refer (defmacro-)]
+            [penumbra.utils :refer (defmacro-) :as util]
             [schema.core :as s])
   (:import [clojure.lang Atom]
            [org.lwjgl.glfw GLFW GLFWErrorCallback]
            [penumbra.app.event EventHandler]
-           [penumbra.app.queue ActionQueue]))
+           [penumbra.app.queue ActionQueue]
+           [penumbra.app.window Window]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
+;; Q: What are these, really?
+(def time-delta {:delta Float
+                 :time Float})
+(def position-2d {:x s/Int, :y s/Int})
+(def rect (assoc position-2d :width s/Int :height s/Int))
+(def delta-2d {:d position-2d
+               :p position-2d})
+
+;;; Q: How does Schema handle multiple arities?
+;;; A: Doesn't matter here
+;;; This is based on the initial docstring for (start)
+(def callback-map {(s/optional-key :close) (s/=> s/Any Window util/state)  ;  ???
+                   (s/optional-key :display) (s/=> s/Any Window time-delta util/state)
+                   ;; TODO: This should go away. I think.
+                   (s/optional-key :init) (s/=> util/state util/state)
+                   ;; Key and mouse events realistically need to move into the channel-map
+                   ;; Or maybe something more specific, like an input-channel-map
+                   ;; TODO: Figure out how to make that work correctly
+                   (s/optional-key :key-press) (s/=> util/state s/Int util/state)
+                   (s/optional-key :key-release) (s/=> util/state s/Int util/state)
+                   (s/optional-key :key-type) (s/=> util/state s/Int util/state)
+                   (s/optional-key :mouse-click) (s/=> util/state position-2d s/Int util/state)
+                   (s/optional-key :mouse-down) (s/=> util/state position-2d s/Int util/state)
+                   (s/optional-key :mouse-up) (s/=> util/state position-2d s/Int util/state)
+                   (s/optional-key :mouse-drag) (s/=> util/state delta-2d s/Int util/state)
+                   (s/optional-key :mouse-move) (s/=> util/state delta-2d util/state)
+                   (s/optional-key :reshape) (s/=> s/Any Window rect util/state)
+                   (s/optional-key :update) (s/=> util/state time-delta util/state)
+                   (s/optional-key :update-hidden) (s/=> util/state time-delta util/state)
+                   (s/optional-key :update-visible) (s/=> util/state time-delta util/state)})
+
+(def stage {:title s/Str
+            :state util/state
+            :callbacks callback-map
+            :channels util/channel-map})
+
 (s/defrecord App
-    [done
-     callbacks
+    [callbacks
      clock
      controller
+     done :- util/promise-class
      event-handler :- EventHandler
      main-loop
      parent
@@ -408,19 +446,20 @@
 (comment (defn start
   "Starts a window from scratch, or from a closed state.
   Supported callbacks are:
-  :update         [[delta time] state]
-  :display        [[delta time] state]
-  :reshape        [[x y width height] state]
-  :init           [state]
   :close          [state]
+  :display        [[delta time] state]
+  :init           [state]
+  :key-press      [key state]
+  :key-release    [key state]
+  :key-type       [key state]
+  :mouse-click    [[x y] button state]
+  :mouse-down     [[x y] button state]
   :mouse-drag     [[[dx dy] [x y]] button state]
   :mouse-move     [[[dx dy] [x y]] state]
   :mouse-up       [[x y] button state]
-  :mouse-click    [[x y] button state]
-  :mouse-down     [[x y] button state]
-  :key-type       [key state]
-  :key-press      [key state]
-  :key-release    [key state]"
+  :reshape        [[x y width height] state]
+  :update         [[delta time] state]
+"
   ([callbacks]
    (start callbacks {}))
   ([callbacks state]
@@ -449,3 +488,26 @@
 (defn ctor
   [defaults]
   (map->App defaults))
+
+(s/defn create-stage
+  "Build a 'stage' for Apps to play on
+   Or something like that. I'm still wrestling with terminology.
+
+   This should be idempotent. At least in theory. Except that, at
+   the very least, we're creating a Window. Definitely don't want
+   *that* happening inside a transaction."
+  ([title :- s/Str
+    initial-state :- util/state
+    callbacks :- callback-map
+    channels :- util/channel-map]
+   (create-stage (util/random-uuid) title initial-state callbacks channels))
+  ([id :- s/Uuid
+    title :- s/Str
+    initial-state :- util/state
+    callbacks :- callback-map
+    channels :- util/channel-map]
+   (ctor {:callbacks callbacks
+          :channels channels
+          :state (atom initial-state)
+          :window (window/ctor {:title title})})))
+

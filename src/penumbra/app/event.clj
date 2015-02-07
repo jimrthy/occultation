@@ -29,7 +29,7 @@
 ;;; Internal
 
 (s/defn alter-subscription
-  "Alters the subscription associated with hook and f, using alteration"
+  "Alters the subscription associated with hook and f, by calling alteration"
   [component :- EventHandler
    alteration
    hook

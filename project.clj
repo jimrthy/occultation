@@ -20,11 +20,7 @@
                                   [org.clojure/java.classpath "0.2.1"]]
                    :injections [(require 'clojure.pprint)]}}
   :java-source-paths ["java"]
-  ;; That work-around for native dependencies doesn't seem to
-  ;; work these days. I do seem to need this
-  #_(comment :jvm-opts [~(str "-Djava.library.path=native/:"
-                            (System/getProperty "java.library.path"))])
-  :jvm-opts [~(str  "-Djava.library.path=/usr/local/lib:"
+  :jvm-opts [~(str "-Djava.library.path=/usr/local/lib:"
                    (System/getProperty "java.library.path"))]
   :checksum-deps false)
 

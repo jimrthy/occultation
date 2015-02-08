@@ -30,9 +30,15 @@
   component/Lifecycle
   (start
    [this]
-   this)
+   (assoc this :done (promise)))
   (stop
    [this]
+   ;; Very tempting to deref done here...that seems
+   ;; like it would be a mistake.
+   ;; OTOH...it might be appropriate to
+   ;;(map #(deref (:done %)) stages)
+   ;; For now, just stop each Stage:
+   (dorun (map component/stop @stages))
    this))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,4 +56,11 @@
   ;; Any mutable state that needs to be shared
   ;; among Components must be created here, not
   ;; during start
+  ;; Making this a set really doesn't work. Each
+  ;; Stage is really a bundle of mutable state/callbacks
+  ;; (along with things that are inherently mutable,
+  ;; like a Window).
+  ;; It's really tempting to make this an atom that
+  ;; holds a map of GUIDs to Stage atoms...but that
+  ;; approach seems like madness.
   (map->StageManager {:stages (atom #{})}))

@@ -13,6 +13,11 @@
 (def async-channel (class (async/chan)))
 (def channel-map {s/Keyword async-channel})
 
+(def input-channel-map {:char-input async-channel
+                        :key-change async-channel
+                        :mouse-move async-channel
+                        :mouse-button async-channel})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 

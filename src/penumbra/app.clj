@@ -62,10 +62,22 @@
                    (s/optional-key :mouse-up) (s/=> util/state position-2d s/Int util/state)
                    (s/optional-key :mouse-drag) (s/=> util/state delta-2d s/Int util/state)
                    (s/optional-key :mouse-move) (s/=> util/state delta-2d util/state)
+                   ;; This seems like it should also feed through a channel
                    (s/optional-key :reshape) (s/=> s/Any Window rect util/state)
+                   ;; TODO: Mark this obsolete
                    (s/optional-key :update) (s/=> util/state time-delta util/state)
-                   (s/optional-key :update-hidden) (s/=> util/state time-delta util/state)
-                   (s/optional-key :update-visible) (s/=> util/state time-delta util/state)})
+                   ;; TODO: Switch everything to use these instead.
+                   ;; Except that the basic premise is shaky...
+                   ;; Games need an event loop for updating their world periodically.
+                   ;; Especially the physics parts. And animations.
+                   ;; That's sort-of what these are for, but it probably doesn't matter much
+                   ;; whether they're visible or not.
+                   ;; They're either based on "real" time deltas or arbitrary game ticks,
+                   ;; and this part needs to be totally independent of anything related to
+                   ;; drawing.
+                   #_(comment
+                     (s/optional-key :update-hidden) (s/=> util/state time-delta util/state)
+                     (s/optional-key :update-visible) (s/=> util/state time-delta util/state))})
 
 (def stage {:title s/Str
             :state util/state
@@ -73,7 +85,8 @@
             :channels util/channel-map})
 
 (s/defrecord App
-    [callbacks
+    [callbacks :- callback-map
+     channels :- util/input-channel-map
      clock
      controller
      done :- util/promise-class
@@ -85,7 +98,7 @@
      state :- Atom
      state-stack :- Atom
      threading
-     window]
+     window :- Window]
   clojure.lang.IDeref
   (deref
    [_]
@@ -496,10 +509,12 @@
    This should be idempotent. At least in theory. Except that, at
    the very least, we're creating a Window. Definitely don't want
    *that* happening inside a transaction."
+  ([{:keys [title initial-state callbacks channels]}]
+   (create-stage (util/random-uuid) title initial-state callbacks channels))
   ([title :- s/Str
     initial-state :- util/state
     callbacks :- callback-map
-    channels :- util/channel-map]
+    channels :- util/input-channel-map]
    (create-stage (util/random-uuid) title initial-state callbacks channels))
   ([id :- s/Uuid
     title :- s/Str

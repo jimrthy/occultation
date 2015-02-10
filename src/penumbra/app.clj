@@ -358,7 +358,12 @@
   ([app]
    (GLFW/glfwPollEvents)
 
-   (if ((some-fn window/invalidated? controller/invalidated?) app)
+   (if (and (window/visible? (:window app))
+            ;; Don't want to redraw the window if nothing's changed
+            ;; TODO: Find something equivalent to window/invalidated?
+            (or
+             ((some-fn #_window/invalidated? controller/invalidated?) app)
+             true))
      (do
        (doto app
          (event/publish! :enqueue)

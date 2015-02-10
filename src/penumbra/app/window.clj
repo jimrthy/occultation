@@ -11,13 +11,13 @@
             [penumbra.app.core :as app]
             [penumbra.app.event :as event]
             [penumbra.app.utilities :as util]
-            [penumbra.constants :as K]
+            [penumbra.constants :as K :refer (gl-false)]
             [penumbra.opengl
              [texture :as texture]
              [context :as context]]
             ;; FIXME: Don't do this.
             [penumbra.opengl :refer :all]
-            [penumbra.opengl.core :refer (gl-false)]
+            [penumbra.opengl.core]
             [penumbra.text :as text]
             [schema.core :as s])
   (:import [org.lwjgl.glfw GLFW GLFWvidmode]
@@ -36,31 +36,33 @@
                :height s/Int})
 
 (def hint-map {:resizable GLFW/GLFW_RESIZABLE         ; bool
-                  ;; Don't show until it's positioned
-                  ; :visible GLFW/GLFW_VISIBLE             ; bool
-                  :decorated GLFW/GLFW_DECORATED         ; bool
-                  :red GLFW/GLFW_RED_BITS
-                  :green GLFW/GLFW_GREEN_BITS
-                  :blue GLFW/GLFW_BLUE_BITS
-                  :alpha GLFW/GLFW_ALPHA_BITS
-                  :depth GLFW/GLFW_DEPTH_BITS
-                  :stencil GLFW/GLFW_STENCIL_BITS
-                  :accum-red GLFW/GLFW_ACCUM_RED_BITS      ; int
-                  :accum-green GLFW/GLFW_ACCUM_GREEN_BITS  ; int
-                  :accum-blue GLFW/GLFW_ACCUM_BLUE_BITS    ; int
-                  :accum-alpha GLFW/GLFW_ACCUM_ALPHA_BITS  ; int
-                  :aux-buffers GLFW/GLFW_AUX_BUFFERS       ; int
-                  :samples GLFW/GLFW_SAMPLES               ; int
-                  :refresh-rate GLFW/GLFW_REFRESH_RATE     ; int
-                  :stereo GLFW/GLFW_STEREO                 ; bool
-                  :srgb-capable GLFW/GLFW_SRGB_CAPABLE     ; bool
-                  :client-api GLFW/GLFW_OPENGL_API   ; opengl or opengl-es
-                  :major GLFW/GLFW_CONTEXT_VERSION_MAJOR
-                  :minor GLFW/GLFW_CONTEXT_VERSION_MINOR
-                  :robust GLFW/GLFW_CONTEXT_ROBUSTNESS  ; interesting enum
-                  :forward GLFW/GLFW_OPENGL_FORWARD_COMPAT
-                  :deugging GLFW/GLFW_OPENGL_DEBUG_CONTEXT
-                  :profile GLFW/GLFW_OPENGL_PROFILE})
+               ;; Don't show until it's positioned
+               ;; (i.e. Don't let callers override, though that seems
+               ;; like an obnoxious choice
+               ;; :visible GLFW/GLFW_VISIBLE             ; bool
+               :decorated GLFW/GLFW_DECORATED         ; bool
+               :red GLFW/GLFW_RED_BITS
+               :green GLFW/GLFW_GREEN_BITS
+               :blue GLFW/GLFW_BLUE_BITS
+               :alpha GLFW/GLFW_ALPHA_BITS
+               :depth GLFW/GLFW_DEPTH_BITS
+               :stencil GLFW/GLFW_STENCIL_BITS
+               :accum-red GLFW/GLFW_ACCUM_RED_BITS      ; int
+               :accum-green GLFW/GLFW_ACCUM_GREEN_BITS  ; int
+               :accum-blue GLFW/GLFW_ACCUM_BLUE_BITS    ; int
+               :accum-alpha GLFW/GLFW_ACCUM_ALPHA_BITS  ; int
+               :aux-buffers GLFW/GLFW_AUX_BUFFERS       ; int
+               :samples GLFW/GLFW_SAMPLES               ; int
+               :refresh-rate GLFW/GLFW_REFRESH_RATE     ; int
+               :stereo GLFW/GLFW_STEREO                 ; bool
+               :srgb-capable GLFW/GLFW_SRGB_CAPABLE     ; bool
+               :client-api GLFW/GLFW_OPENGL_API   ; opengl or opengl-es
+               :major GLFW/GLFW_CONTEXT_VERSION_MAJOR
+               :minor GLFW/GLFW_CONTEXT_VERSION_MINOR
+               :robust GLFW/GLFW_CONTEXT_ROBUSTNESS  ; interesting enum
+               :forward GLFW/GLFW_OPENGL_FORWARD_COMPAT
+               :deugging GLFW/GLFW_OPENGL_DEBUG_CONTEXT
+               :profile GLFW/GLFW_OPENGL_PROFILE})
 ;; TODO: Make the legal values explicit
 (def legal-window-hints {(s/enum (keys hint-map)) s/Any})
 
@@ -322,18 +324,18 @@
       (catch RuntimeException e
         true))))
 
-(s/defn invalidated? :- s/Bool
-  [owner :- window-holder]
-  (let [^Window window (:window owner)]
-    ;; TODO: Check whether there's been a paint
-    ;; request, or whatever the GLFW equivalent
-    ;; is, since the last time this was called
-    ;; Deprecated may be the wrong name.
-    ;; I haven't seen anything in the docs or source that looks like
-    ;; this sort of thing is still available.
-    ;; TODO: Looks like there's a window refresh callback that covers this
-    (comment (throw (RuntimeException. "Deprecated")))
-    true))
+(comment (s/defn invalidated? :- s/Bool
+           [owner :- window-holder]
+           (let [^Window window (:window owner)]
+             ;; TODO: Check whether there's been a paint
+             ;; request, or whatever the GLFW equivalent
+             ;; is, since the last time this was called
+             ;; Deprecated may be the wrong name.
+             ;; I haven't seen anything in the docs or source that looks like
+             ;; this sort of thing is still available.
+             ;; TODO: Looks like there's a window refresh callback that covers this
+             (comment (throw (RuntimeException. "Deprecated")))
+             true)))
 
 (s/defn size :- {:width s/Int, :height s/Int}
   [window :- Window]
@@ -396,3 +398,8 @@
                  position (assoc :position position)
                  title (assoc :title title))]
     (map->Window params)))
+
+(s/defn visible? :- s/Bool
+  [component :- Window]
+  (let [v (GLFW/glfwGetWindowAttrib (:handle component) GLFW/GLFW_VISIBLE)]
+    (not= v gl-false)))

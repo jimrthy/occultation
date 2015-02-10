@@ -121,14 +121,6 @@
                            GL11 GL12 GL13 GL14 GL15 GL20 GL30 GL31 GL32 GL42
                            #_GLU])
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Named Constants
-;;; Mainly for stylistic consistency
-;;; To avoid magic numbers.
-;;; These would probably make more sense in their own namespace
-
-(def gl-false GL11/GL_FALSE)
-
 (defn- get-fields [^Class static-class]
   (. static-class getFields))
 

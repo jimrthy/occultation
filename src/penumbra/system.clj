@@ -15,10 +15,14 @@
              [base :as base]
              [configuration :as config]]
             [penumbra.app
+             [manager :as manager]
+             ;; The rest of these are, for now, parts
+             ;; associated with an App/Stage.
+             ;; That seems wrong, but I still nood to work
+             ;; through the implications and details.
              #_[controller :as controller]
              #_[event :as event]
              #_[input :as input]
-             [manager :as manager]
              #_[queue :as queue]
              #_[window :as window]]))
 

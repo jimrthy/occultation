@@ -118,14 +118,24 @@
    [this]
    (when event-handler
      (event/publish! event-handler :close))
-   (controller/stop! this)
+   (when controller
+     (controller/stop! controller))
    ;; It's tempting to leave this in place if it isn't
    ;; empty, but that seems to violate a huge part of the
    ;; point to the Component architecture
-   (assoc this :state-stack (atom nil))))
+   (into this {:controller nil
+               :state-stack (atom nil)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helpers
+
+(defmethod print-method App [app writer]
+  (.write writer (str "#orangelet " (into {} app))))
+(defmethod print-dup App [app writer]
+  (.write writer (str "#orangelet " (into {} app))))
+(.addMethod clojure.pprint/simple-dispatch App
+            (fn [x]
+              (print-method x *out*)))
 
 ;; Q: What's this for? How does it interact w/ name-with-attributes?
 (defn- transform-extend-arglists [protocol name arglists template]
@@ -526,8 +536,14 @@
     initial-state :- util/state
     callbacks :- callback-map
     channels :- util/channel-map]
-   (ctor {:callbacks callbacks
-          :channels channels
-          :state (atom initial-state)
-          :window (window/ctor {:title title})})))
+   (let [base
+         (component/system-map
+          :orangelet (ctor {:callbacks callbacks
+                            :channels channels
+                            :state (atom initial-state)})
+          :window (window/ctor {:title title}))
+         dependencies {:orangelet [:window]}]
+     (with-meta (component/system-using base
+                                        dependencies)
+       dependencies))))
 

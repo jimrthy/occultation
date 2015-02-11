@@ -1,4 +1,4 @@
-;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   Copyright (c) 2012 Zachary Tellman. All rights reserved.
 ;;   The use and distribution terms for this software are covered by the
 ;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;;   which can be found in the file epl-v10.html at the root of this distribution.
@@ -7,9 +7,11 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app.controller
-  (:require [com.stuartsierra.component :as component]
- [schema.core :as s])
+  (:require [clojure.pprint :refer (pprint)]
+            [com.stuartsierra.component :as component]
+            [schema.core :as s])
   (:import [clojure.lang Ref]
+           [java.io PrintWriter StringWriter]
            [java.util.concurrent CountDownLatch]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,9 +109,18 @@
    (stop! component true))
   ([component :- Controller
     reason :- s/Any]
-   (let [stopped? (:stopped? component)]
+   (if-let [stopped? (:stopped? component)]
      (dosync
-      (ref-set stopped? reason)))))
+      (ref-set stopped? reason))
+     ;; TODO: Start here
+     (let [fake-ex (RuntimeException.)
+           sw (StringWriter.)
+           pw (PrintWriter. sw)]
+       ;; evil mutable java objects
+       (.printStackTrace fake-ex pw)
+       (println "Error: missing stopped? in:\n"
+                (with-out-str (pprint component))
+                (str sw))))))
 
 (s/defn stopped?
   [component :- Controller]

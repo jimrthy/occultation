@@ -48,7 +48,12 @@
   [this :- StageManager
    stage :- App]
   (io!
-   (swap! (:stages this) conj)))
+   (swap! (:stages this) conj stage)))
+
+(s/defn clear-stage!
+  [this :- StageManager
+   stage :- App]
+  (io! (swap! (:stages this) disj stage)))
 
 (defn ctor
   [_]

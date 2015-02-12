@@ -113,7 +113,8 @@
                    :title real-title}))))
   (stop
    [this]
-   (GLFW/glfwDestroyWindow handle)
+   (when handle
+     (GLFW/glfwDestroyWindow handle))
    (assoc this :handle nil)))
 
 ;; TODO: Make this go away. Callers should

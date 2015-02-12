@@ -113,13 +113,14 @@
      (dosync
       (ref-set stopped? reason))
      ;; TODO: Start here
-     (let [fake-ex (RuntimeException.)
+     (let [fake-ex (RuntimeException. "Ignore this part")
            sw (StringWriter.)
            pw (PrintWriter. sw)]
        ;; evil mutable java objects
        (.printStackTrace fake-ex pw)
        (println "Error: missing stopped? in:\n"
                 (with-out-str (pprint component))
+                "\nWith members:\n" (keys component)
                 (str sw))))))
 
 (s/defn stopped?

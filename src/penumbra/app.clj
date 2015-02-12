@@ -84,6 +84,7 @@
             :callbacks callback-map
             :channels util/channel-map})
 
+(declare start-single-thread)
 (s/defrecord App
     [callbacks :- callback-map
      channels :- util/input-channel-map
@@ -112,8 +113,9 @@
    ;; Seems like it would be silly to start with an initial
    ;; stack, but it seems sillier to not allow for that
    ;; possibility
-   (let [initial-state-stack (or state-stack (atom nil))]
-     (assoc this :state-stack initial-state-stack)))
+   (let [initial-state-stack (or state-stack (atom nil))
+         stateful (assoc this :state-stack initial-state-stack)]
+     (assoc this :main-loop (start-single-thread stateful loop/basic-loop))))
   (stop
    [this]
    (when event-handler
@@ -363,7 +365,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; App state
 
-(defn single-thread-main-loop
+(defn once-through-single-threaded-event-loop
   "Does everything in one pass."
   ([app]
    (GLFW/glfwPollEvents)
@@ -396,7 +398,7 @@
   "This is being called from start. With an App instance and penumbra.app.loop/basic-loop"
   [app loop-fn]
   ;; Instead, set this up during component/start
-  (throw (RuntimeException. "Don't handle it this way"))
+  (comment (throw (RuntimeException. "Don't handle it this way")))
   ;; FIXME: Is there a reason to do this in a Thread instead
   ;; a future? Except, of course, that the semantics of a future
   ;; have all the wrong implications.
@@ -424,12 +426,16 @@
                                   ;; Q: Why is this a partial?
                                   ;; A: It's being called in penumbra.app.loop/basic-loop with
                                   ;; no args.
-                                  (partial single-thread-main-loop app))
-                                 (catch Exception ex
+                                  (partial once-through-single-threaded-event-loop app))
+                                 (catch RuntimeException ex
                                    ;; TODO: More error-handling info!
-                                   (println "Unhandled exception from the drawing loop:\n" ex)))
+                                   (let [stack (.getStackTrace ex)
+                                         frames (map #(str % "\n") stack)]
+                                     (println "Unhandled exception from the drawing loop:\n" ex
+                                              map identity frames))))
                                (println "Cleaning up after main loop. app:" app)
-                               (when (controller/stopped? app)
+                               (when (controller/stopped? (:controller app))
+                                 ;; Q: What's going on here?
                                  (app/destroy! app))))]
     (assoc app :event-loop event-thread)))
 

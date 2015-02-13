@@ -7,13 +7,19 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns penumbra.app.loop
-  (:require [penumbra.app.core :as app]
-            [penumbra.app.controller :as controller]
+  (:require [penumbra.app.controller :as controller]
+            [penumbra.app.core :as app]
             [penumbra.app.window :as window]
             [penumbra.opengl :as opengl]
-            [penumbra.time :as time]))
+            [penumbra.time :as time]
+            [schema.core :as s])
+  (:import [penumbra.app.controller Controller]))
 
-;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Schema
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
 
 (defn timed-fn
   "Creates a wrapper function which prepends any arguments with [dt t] in seconds."
@@ -64,9 +70,10 @@
             #(%)
             #(pauseable-loop app outer-fn inner-fn))))
 
-(defn basic-loop
-  [controller outer-fn inner-fn]
-  (comment (with-app app))
+(s/defn basic-loop
+  [controller :- Controller
+   outer-fn
+   inner-fn]
   (try
     (outer-fn
      (fn []

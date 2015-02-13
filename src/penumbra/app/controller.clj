@@ -27,12 +27,8 @@
   component/Lifecycle
   (start
    [this]
-   (let [result
-         (into this {:paused (ref false)
-                     :stopped? (ref :initializing)
-                     :invalidated? (ref true)
-                     :latch (ref (CountDownLatch. 1))})]
-     (resume! result)))
+   (resume! this)
+   this)
   (stop
    [this]
    (dosync
@@ -98,8 +94,12 @@
 (s/defn resume!
   [component :- Controller]
   (dosync
-   (ref-set (:paused? component) false)
-   (ref-set (:stopped? component) false)
+   (if-let [paused (:paused? component)]
+     (ref-set paused false)
+     (println "Missing :paused? in " component))
+   (if-let [stopped (:stopped? component)]
+     (ref-set stopped false)
+     (println "Missing :stoped? in " component))
    (when-let [latch (:latch component)]
      (.countDown @latch)
      (ref-set latch nil))))
@@ -134,4 +134,7 @@
 
 (defn ctor
   [_]
-  (map->Controller {}))
+  (map->Controller {:paused? (ref false)
+                     :stopped? (ref :initializing)
+                     :invalidated? (ref true)
+                     :latch (ref (CountDownLatch. 1))}))

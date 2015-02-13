@@ -29,6 +29,7 @@
             [schema.core :as s])
   (:import [clojure.lang Atom]
            [org.lwjgl.glfw GLFW GLFWErrorCallback]
+           [penumbra.app.controller Controller]
            [penumbra.app.event EventHandler]
            [penumbra.app.queue ActionQueue]
            [penumbra.app.window Window]))
@@ -89,7 +90,7 @@
     [callbacks :- callback-map
      channels :- util/input-channel-map
      clock
-     controller
+     controller :- Controller
      done :- util/promise-class
      event-handler :- EventHandler
      main-loop
@@ -110,12 +111,13 @@
   component/Lifecycle
   (start
    [this]
+   (println "Starting the app")
    ;; Seems like it would be silly to start with an initial
    ;; stack, but it seems sillier to not allow for that
    ;; possibility
    (let [initial-state-stack (or state-stack (atom nil))
          stateful (assoc this :state-stack initial-state-stack)]
-     (assoc this :main-loop (start-single-thread stateful loop/basic-loop))))
+     (assoc stateful :main-loop (start-single-thread stateful loop/basic-loop))))
   (stop
    [this]
    (when event-handler
@@ -415,11 +417,11 @@
                                (println "Entering a window loop in a background thread\nApp:" app)
                                (try
                                  (loop-fn
-                                  app
+                                  (:controller app)
                                   (fn [inner-fn]
                                     (doto app
                                       (app/speed! 0)
-                                      app/init!
+                                      app/init!  ; Q: Do we really want to do this again?
                                       (app/speed! 1))
                                     (inner-fn)
                                     (app/speed! app 0))
@@ -544,11 +546,14 @@
     channels :- util/channel-map]
    (let [base
          (component/system-map
+          :controller (controller/ctor {})
           :orangelet (ctor {:callbacks callbacks
                             :channels channels
                             :state (atom initial-state)})
           :window (window/ctor {:title title}))
-         dependencies {:orangelet [:window]}]
+         dependencies {:orangelet [:controller :window]}]
+     (println "Setting up System map, using baseline\n"
+              (into {} base))
      (with-meta (component/system-using base
                                         dependencies)
        dependencies))))

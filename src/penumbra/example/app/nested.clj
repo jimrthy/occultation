@@ -44,6 +44,18 @@
 ;;; Then again, it's not like the version I'm replacing would have worked
 ;;; with those anyway.
 ;;; TODO: Figure out how to make this work again
+
+;;; Important note based on spelunking the mailing list:
+;;; the ultimate goal behind this seems to have been setting up
+;;; switchable interfaces. Specifically game vs. menu
+
+;;; Actually, it looks like the original version was an example
+;;; of a State1/State2/State3 scenario, and I've misunderstood the entire
+;;; point. This "orangelet" should be able to bounce between them
+;;; seamlessly. That's why it called (stop!) at each transition
+
+;;; At least, I think that's what I missed when I tried to translate
+;;; it.
 (defn system
   []
   (let [base (component/system-map :app (app/ctor {})

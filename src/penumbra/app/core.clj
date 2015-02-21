@@ -6,7 +6,8 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns penumbra.app.core)
+(ns penumbra.app.core
+  (:require [penumbra.time :as time]))
 
 ;; TODO: These next 2 dynamic vars need to go away
 (comment (def ^:dynamic *app*
@@ -21,11 +22,24 @@
 
 ;;;
 
-(defprotocol App
-  (init! [app])
-  (destroy! [app])
-  (speed! [app speed])
-  (now [app]))
+(comment
+  (defprotocol App
+    (init! [app])
+    (destroy! [app])
+    (speed! [app speed])
+    (now [app])))
+
+(defn speed!
+  "This doesn't belong here
+
+  But it's where the Protocol was defined, so it's
+  where the errors about it are happening.
+
+  Actually, maybe this *is* where the defrecord belongs"
+  [app
+   speed]
+  (time/speed! (:clock app) speed))
+
 ;; Should probably just break down and do something like
 (comment (.addMethod pprint/simple-dispatch App pprint-App))
 ;; But that involves knowing about pprint in here (which

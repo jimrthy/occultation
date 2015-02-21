@@ -11,8 +11,7 @@
             [clojure.pprint :refer (pprint)]
             [clojure.walk :refer (postwalk-replace)]
             [com.stuartsierra.component :as component]
-            [penumbra
-             [time :as time]]
+            #_[penumbra.time :as time]
             [penumbra.app
              [controller :as controller]
              [core :as app]
@@ -133,6 +132,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helpers
 
+(s/defn init!
+  "This seems like it should be subsumed by Components.
+  But there's at least one subtlety:
+  the actual event loop does something I'm not clear about
+  where it seems to pause the clock (probably when the clock
+  actually gets paused), calls this, then resumes that clock.
+
+  So leave this in place until I get a grasp on what's
+  actually happening.
+
+  Except that I've eliminated most of these. So that seems
+  like a poor approach.
+  New plan: dig into the original to try to figure out what
+  was/is going on around that event loop."
+  [this :- App]
+  (window/init! (:window this))
+  (input/init! (:input this))
+  (queue/init! (:queue this))
+  (controller/init! (:controller this))
+  (event/publish! app :init))
+
 (defmethod print-method App [app writer]
   (.write writer (str "#orangelet " (into {} app))))
 (defmethod print-dup App [app writer]
@@ -142,6 +162,12 @@
               (print-method x *out*)))
 
 ;; Q: What's this for? How does it interact w/ name-with-attributes?
+;; A: It seems to be a helper to auto-extend.
+;; It looks like it's all about taking the function signatures associated
+;; with an instance the App contains (based upon protocols) so the
+;; auto-extend macro below can automatically extend that instance.
+;; Which happens to be exactly what the docstring for that macro
+;; has said all along.
 (defn- transform-extend-arglists [protocol name arglists template]
   (list*
    `fn
@@ -157,7 +183,20 @@
     arglists)))
 
 (defmacro- auto-extend
-  "Lets the application, which contains an implementation of a protocol, automatically extend that protocol."
+  "Classic Container pattern
+
+  If an instance contains another instance that implements a protocol,
+  the container might as well implement that same protocol by calling the
+  instance it contains
+
+  Original docstring:
+  Lets the application, which contains an implementation of a protocol, automatically extend that protocol.
+
+  My current approach trashes this pretty thoroughly, which really seems
+  like a shame. It's something I've frequently wished I could do back when
+  I lived in OOP land.
+
+  Q: So...what happens when an object implements several protocols at once?"
   [type protocol template & explicit]
   (let [protocol (eval protocol)
         sigs (eval `(vals (:sigs ~protocol)))]
@@ -421,7 +460,15 @@
                                   (fn [inner-fn]
                                     (doto app
                                       (app/speed! 0)
-                                      app/init!  ; Q: Do we really want to do this again?
+                                      ;; This next line looks like it should have been
+                                      ;; invoking a bunch of the original auto-extend
+                                      ;; magic, but it isn't doing anything of the sort.
+                                      ;; It was originally just a function that called
+                                      ;; the (init!) of each of the important members of
+                                      ;; the App instance in turn.
+                                      ;; Q: Do I want this to happen outside the basic
+                                      ;; Component Lifecycle?
+                                      init!
                                       (app/speed! 1))
                                     (inner-fn)
                                     (app/speed! app 0))

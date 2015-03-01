@@ -10,7 +10,7 @@
   (:require [com.stuartsierra.component :as component]
             [penumbra.app.core :as app]
             [penumbra.app.event :as event]
-            [penumbra.app.utilities :as util]
+            [penumbra.utils :as util]
             [penumbra.constants :as K :refer (gl-false)]
             [penumbra.opengl
              [texture :as texture]
@@ -30,47 +30,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schema
 
-(def Position {:left s/Int
-               :top s/Int
-               :width s/Int
-               :height s/Int})
-
-(def hint-map {:resizable GLFW/GLFW_RESIZABLE         ; bool
-               ;; Don't show until it's positioned
-               ;; (i.e. Don't let callers override, though that seems
-               ;; like an obnoxious choice
-               ;; :visible GLFW/GLFW_VISIBLE             ; bool
-               :decorated GLFW/GLFW_DECORATED         ; bool
-               :red GLFW/GLFW_RED_BITS
-               :green GLFW/GLFW_GREEN_BITS
-               :blue GLFW/GLFW_BLUE_BITS
-               :alpha GLFW/GLFW_ALPHA_BITS
-               :depth GLFW/GLFW_DEPTH_BITS
-               :stencil GLFW/GLFW_STENCIL_BITS
-               :accum-red GLFW/GLFW_ACCUM_RED_BITS      ; int
-               :accum-green GLFW/GLFW_ACCUM_GREEN_BITS  ; int
-               :accum-blue GLFW/GLFW_ACCUM_BLUE_BITS    ; int
-               :accum-alpha GLFW/GLFW_ACCUM_ALPHA_BITS  ; int
-               :aux-buffers GLFW/GLFW_AUX_BUFFERS       ; int
-               :samples GLFW/GLFW_SAMPLES               ; int
-               :refresh-rate GLFW/GLFW_REFRESH_RATE     ; int
-               :stereo GLFW/GLFW_STEREO                 ; bool
-               :srgb-capable GLFW/GLFW_SRGB_CAPABLE     ; bool
-               :client-api GLFW/GLFW_OPENGL_API   ; opengl or opengl-es
-               :major GLFW/GLFW_CONTEXT_VERSION_MAJOR
-               :minor GLFW/GLFW_CONTEXT_VERSION_MINOR
-               :robust GLFW/GLFW_CONTEXT_ROBUSTNESS  ; interesting enum
-               :forward GLFW/GLFW_OPENGL_FORWARD_COMPAT
-               :deugging GLFW/GLFW_OPENGL_DEBUG_CONTEXT
-               :profile GLFW/GLFW_OPENGL_PROFILE})
-;; TODO: Make the legal values explicit
-(def legal-window-hints {(s/enum (keys hint-map)) s/Any})
-
 (declare customize-window-hints)
 
 (s/defrecord Window [handle :- s/Int
-                     position :- Position
-                     hints :- legal-window-hints
+                     position :- util/Position
+                     hints :- util/legal-window-hints
                      monitor :- s/Int
                      share :- s/Int
                      title :- s/Str]
@@ -128,7 +92,7 @@
 (defn customize-window-hints
   [hints]
   (doseq [[k v] hints]
-    (GLFW/glfwWindowHint (k hint-map) v))
+    (GLFW/glfwWindowHint (k util/hint-map) v))
   (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE K/gl-false))
 
 (defn- transform-display-mode [^ByteBuffer m]
@@ -392,11 +356,13 @@
     (= current-state GLFW/GLFW_PRESS)))
 
 (s/defn ctor :- Window
-  [{:keys [handle hints position title]}]
+  [{:keys [handle hints monitor position share title]} :- util/window-configuration]
   (let [params (cond-> {}
                  handle (assoc :handle handle)
                  hints (assoc :hints hints)
+                 monitor (assoc :monitor monitor)
                  position (assoc :position position)
+                 share (assoc :share share)
                  title (assoc :title title))]
     (map->Window params)))
 

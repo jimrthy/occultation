@@ -27,6 +27,7 @@
             [penumbra.utils :refer (defmacro-) :as util]
             [schema.core :as s])
   (:import [clojure.lang Atom]
+           [com.stuartsierra.component SystemMap]
            [org.lwjgl.glfw GLFW GLFWErrorCallback]
            [penumbra.app.controller Controller]
            [penumbra.app.event EventHandler]
@@ -79,10 +80,10 @@
                      (s/optional-key :update-hidden) (s/=> util/state time-delta util/state)
                      (s/optional-key :update-visible) (s/=> util/state time-delta util/state))})
 
-(def stage {:title s/Str
-            :state util/state
-            :callbacks callback-map
-            :channels util/channel-map})
+(s/defschema stage {:win-cfg util/window-configuration
+                    :state util/state
+                    :callbacks callback-map
+                    :channels util/channel-map})
 
 (declare start-single-thread)
 (s/defrecord App
@@ -133,25 +134,22 @@
 ;;; Helpers
 
 (s/defn init!
-  "This seems like it should be subsumed by Components.
-  But there's at least one subtlety:
-  the actual event loop does something I'm not clear about
-  where it seems to pause the clock (probably when the clock
-  actually gets paused), calls this, then resumes that clock.
+  "This seems to initially have been about foreshadowing what
+  the Component library now does.
 
-  So leave this in place until I get a grasp on what's
-  actually happening.
+  It gets called when the Orangelet gets started/unpaused.
 
-  Except that I've eliminated most of these. So that seems
-  like a poor approach.
-  New plan: dig into the original to try to figure out what
-  was/is going on around that event loop."
+  That isn't really a good analogy, because that could happen
+  many times over the course of the Orangelet's lifetime,
+  and there doesn't seem to be any corresponding stop when
+  it gets paused."
   [this :- App]
-  (window/init! (:window this))
-  (input/init! (:input this))
-  (queue/init! (:queue this))
-  (controller/init! (:controller this))
-  (event/publish! app :init))
+  (println "Initializing multiple times probably won't work...")
+  (comment (window/init! (:window this))
+           (input/init! (:input this))
+           (queue/init! (:queue this))
+           (controller/init! (:controller this)))
+  (event/publish! this :init))
 
 (defmethod print-method App [app writer]
   (.write writer (str "#orangelet " (into {} app))))
@@ -486,7 +484,11 @@
                                (println "Cleaning up after main loop. app:" app)
                                (when (controller/stopped? (:controller app))
                                  ;; Q: What's going on here?
-                                 (app/destroy! app))))]
+                                 ;; A: We're exiting and trying to clean up after ourselves.
+                                 ;; Instead of
+                                 (comment (app/destroy! app))
+                                 ;; try (even though it seems like a horrible idea)
+                                 (component/stop app))))]
     (assoc app :event-loop event-thread)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -573,35 +575,37 @@
   [defaults]
   (map->App defaults))
 
-(s/defn create-stage
+(s/defn create-stage :- SystemMap
   "Build a 'stage' for Apps to play on
    Or something like that. I'm still wrestling with terminology.
 
    This should be idempotent. At least in theory. Except that, at
    the very least, we're creating a Window. Definitely don't want
    *that* happening inside a transaction."
-  ([{:keys [title initial-state callbacks channels]}]
-   (create-stage (util/random-uuid) title initial-state callbacks channels))
-  ([title :- s/Str
+  ([{:keys [win-cfg initial-state callbacks channels]} :- stage]
+   (create-stage (util/random-uuid) win-cfg initial-state callbacks channels))
+  ([win-cfg :- util/window-configuration
     initial-state :- util/state
     callbacks :- callback-map
     channels :- util/input-channel-map]
-   (create-stage (util/random-uuid) title initial-state callbacks channels))
+   (create-stage (util/random-uuid) win-cfg initial-state callbacks channels))
   ([id :- s/Uuid
-    title :- s/Str
+    win-cfg :- util/window-configuration
     initial-state :- util/state
     callbacks :- callback-map
     channels :- util/channel-map]
    (let [base
          (component/system-map
+          ;; Q: Should the controller really be per-orangelet?
           :controller (controller/ctor {})
           :orangelet (ctor {:callbacks callbacks
                             :channels channels
                             :state (atom initial-state)})
-          :window (window/ctor {:title title}))
+          :window (window/ctor win-cfg))
          dependencies {:orangelet [:controller :window]}]
      (println "Setting up System map, using baseline\n"
-              (into {} base))
+              (with-out-str (pprint (into {} base)))
+              "\n(that's before trying to start it)")
      (with-meta (component/system-using base
                                         dependencies)
        dependencies))))

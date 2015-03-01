@@ -439,43 +439,44 @@
   "This is being called from start. With an App instance and penumbra.app.loop/basic-loop"
   [app loop-fn]
   ;; Instead, set this up during component/start
-  (comment (throw (RuntimeException. "Don't handle it this way")))
-  ;; FIXME: Is there a reason to do this in a Thread instead
-  ;; a future? Except, of course, that the semantics of a future
-  ;; have all the wrong implications.
-  ;; Don't want to double-guess ztellman, but...at the very least,
-  ;; it seems like this should be kicked off using an executor.
   (println "Kicking off a single thread")
-  (let [event-thread (future (context/with-context nil
-                               ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
-                               ;; And this doesn't seem worth preferring one over the other.
-                               ;; More importantly: this isn't actually happening
-                               ;; in the background (when it gets called from a REPL, 
-                               ;; control doesn't return until it exits.
-                               ;; FIXME: What am I understanding incorrectly?
-                               (println "Entering a window loop in a background thread\nApp:" app)
-                               (try
-                                 (loop-fn
-                                  (:controller app)
-                                  (fn [inner-fn]
-                                    (doto app
-                                      (app/speed! 0)
-                                      ;; This next line looks like it should have been
-                                      ;; invoking a bunch of the original auto-extend
-                                      ;; magic, but it isn't doing anything of the sort.
-                                      ;; It was originally just a function that called
-                                      ;; the (init!) of each of the important members of
-                                      ;; the App instance in turn.
-                                      ;; Q: Do I want this to happen outside the basic
-                                      ;; Component Lifecycle?
-                                      init!
-                                      (app/speed! 1))
-                                    (inner-fn)
-                                    (app/speed! app 0))
-                                  ;; Q: Why is this a partial?
-                                  ;; A: It's being called in penumbra.app.loop/basic-loop with
-                                  ;; no args.
-                                  (partial once-through-single-threaded-event-loop app))
+  (let [outer-fn (fn [looper-fn]
+                   ;; This gets called from the initial loop-fn
+                   ;; parameter. It sets up
+                   ;; the app's environment and calls looper-fn,
+                   ;; which is really just an error-protecting wrapper
+                   ;; that loops over inner-fn until it exits
+                   (doto app
+                     (app/speed! 0)
+                     ;; This next line looks like it should have been
+                     ;; invoking a bunch of the original auto-extend
+                     ;; magic, but it isn't doing anything of the sort.
+                     ;; It was originally just a function that called
+                     ;; the (init!) of each of the important members of
+                     ;; the App instance in turn.
+                     ;; Q: Do I want this to happen outside the basic
+                     ;; Component Lifecycle?
+                     init!
+                     (app/speed! 1))
+                   (looper-fn)
+                   (app/speed! app 0))
+        ;; Q: Why is this a partial?
+        ;; A: It's being called in penumbra.app.loop/basic-loop with
+        ;; no args.
+        inner-fn (partial once-through-single-threaded-event-loop app)
+        event-thread (async/thread (context/with-context nil
+                                     ;; Can't pprint app. It's both an IDeref and an IPersistentMap.
+                                     ;; And this doesn't seem worth preferring one over the other.
+                                     ;; More importantly: this isn't actually happening
+                                     ;; in the background (when it gets called from a REPL, 
+                                     ;; control doesn't return until it exits.
+                                     ;; FIXME: What am I understanding incorrectly?
+                                     (println "Entering a window loop in a background thread\nApp:" app)
+                                     (try
+                                       (loop-fn
+                                        (:controller app)
+                                        outer-fn
+                                        inner-fn)
                                  (catch RuntimeException ex
                                    ;; TODO: More error-handling info!
                                    (let [stack (.getStackTrace ex)

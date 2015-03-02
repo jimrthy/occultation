@@ -1,8 +1,25 @@
-The original Penumbra can be found at: https://github.com/ztellman/penumbra
+This is an experimental fork of the excellent but now-defunct Penumbra.
+
+The original can be found at: https://github.com/ztellman/penumbra
+
+So far, I've made 2 drastic changes:
+
+1) It now depends on both Stuart Sierra's Components and Prismatic Schema
+{TODO: insert links}, because I've found both of them indispensable in
+my day job
+2) I'm in the process of switching it from LWJGL2 to LWJGL3.
+
+The second step was drastic enough that I decided this deserves
+its own life in its own repo.
+
+I may never do anything meaningful with it, but that seems more likely
+to happen this way.
 
 From the original readme:
 
 "Penumbra is an idiomatic wrapper for OpenGL in Clojure, by way of LWJGL."
+
+My original README {TODO: get this updated}:
 
 This version of Penumbra is a fork that is really just an attempt to
 get OpenGL working with clojure on my system. I've merged changes

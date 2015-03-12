@@ -1,6 +1,6 @@
-penumbra.iml
-penumbra.iws
-penumbra.ipr
+occultation.iml
+occultation.iws
+occultation.ipr
 *.DS_Store
 /scratch/*
 /lib/*
@@ -14,3 +14,6 @@ lein
 .lein-repl-history
 *.so
 /target/*
+.lein-failures
+.nrepl-port
+

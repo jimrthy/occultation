@@ -5,7 +5,8 @@
             [clojure.repl :refer :all]
             [clojure.test :as test]
             [clojure.tools.namespace.repl :refer (refresh refresh-all)]
-            [clojure.tools.trace :as trace]
+            ;; use spyscope instead
+            #_[clojure.tools.trace :as trace]
             [com.stuartsierra.component :as component]
             [penumbra.system :as system]))
 

@@ -12,7 +12,7 @@
                  #_[kephale/lwjgl-util "2.9.0"]
                  [org.clojure/clojure "1.7.0-beta3"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [org.clojure/math.combinatorics "0.0.2"]
+                 [org.clojure/math.combinatorics "0.1.1"]
                  [prismatic/schema "0.4.2"]
                  [slick-util "1.0.0"]]   ; for things like image and font loading. Status seems questionable
   :profiles {:dev {:source-paths ["dev"]
